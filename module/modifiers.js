@@ -3,6 +3,12 @@ import parselink from '../lib/parselink.js'
 import * as Settings from '../lib/miscellaneous-settings.js'
 import * as HitLocations from '../module/hitlocation/hitlocation.js'
 
+Hooks.once('init', async function () {
+  Hooks.on('closeModifierBucketEditor', (editor, element) => {
+    $(element).hide()   // To make this application appear to close faster, we will hide it before the animation
+  })
+})
+
 // Install Custom Roll to support global modifier access (@gmod & @gmodc)
 export class GurpsRoll extends Roll {
   _prepareData(data) {
@@ -72,9 +78,15 @@ export class ModifierBucket extends Application {
 
   _onenter(ev) {
     this.SHOWING = true
-    this.editor.position.left = ev.pageX - (this.editor.position.width / 2)
-    this.editor.position.top = window.innerHeight -
-      this.editor.position.height - 30 - 74
+    let position = {
+      left: ev.pageX - (this.editor.position.width / 2),
+      top: window.innerHeight - this.editor.position.height - 4
+    }
+    // this.editor.position.left = ev.pageX - (this.editor.position.width / 2)
+    // this.editor.position.top = window.innerHeight - this.editor.position.height - 30 - 74
+
+    console.log(position)
+    this.editor._position = position
     this.editor.render(true)
   }
 
@@ -118,7 +130,6 @@ export class ModifierBucket extends Application {
   }
 
   // If the GM right clicks on the modifier bucket, it will print the raw text data driving the tooltip
-  // TODO must get this data from the Tooltip application...
   async onRightClick(event) {
     event.preventDefault()
     if (!game.user.isGM) return
@@ -199,7 +210,6 @@ ${this.editor.OtherMods}`
 
   async updateBucket() {
     this.refresh()
-    // TODO also update the Tooltip if it is showing
     if (this.SHOWING) {
       this.editor.render(true)
     }
@@ -249,6 +259,10 @@ export class ModifierBucketEditor extends Application {
 
     this.bucket = bucket // reference to class ModifierBucket, which is the 'button' that opens this window
     this.inside = false
+    this._position = {
+      left: 375,
+      top: 296
+    }
 
     for (let loc in HitLocations.hitlocationRolls) {
       let hit = HitLocations.hitlocationRolls[loc]
@@ -273,7 +287,7 @@ export class ModifierBucketEditor extends Application {
       height: 700,
       resizeable: false,
       minimizable: false,
-      popOut: true,
+      popOut: false,
     })
   }
 
@@ -281,6 +295,7 @@ export class ModifierBucketEditor extends Application {
     super.render(force, options)
     this.bucket.SHOWING = true
   }
+
 
   getData(options) {
     const data = super.getData(options)
@@ -362,6 +377,12 @@ export class ModifierBucketEditor extends Application {
     super.activateListeners(html)
 
     console.log('activatelisteners')
+
+    html.removeClass('overflowy')
+    html.css('top', `${this._position.top}px`)
+    html.css('left', `${this._position.left}px`)
+
+    this.bringToTop()
 
     html.find('#modtooltip').off('mouseleave')
     html.find('#modtooltip').off('mouseenter')
