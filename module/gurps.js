@@ -43,9 +43,11 @@ import handlebarHelpers from '../lib/moustachewax.js'
 import * as settings from '../lib/miscellaneous-settings.js'
 import jqueryHelpers from '../lib/jquery-helper.js'
 import { NpcInput } from '../lib/npc-input.js'
+import addChatHooks from './chat.js'
 
 import GURPSConditionalInjury from './injury/foundry/conditional-injury.js'
 
+addChatHooks()
 jqueryHelpers()
 handlebarHelpers()
 settings.initializeSettings()
@@ -163,10 +165,6 @@ GURPS.ClearLastActor = function (actor) {
 //   'huge piercing': 'pi++',
 //   toxic: 'tox',
 // }
-
-// GURPS.parseDmg = (dmg) => {
-//   return dmg.replace(/^(\d+)d6?([-+]\d+)?([xX\*]\d+)? ?(\([.\d]+\))?(!)? ?(.*)$/g, '$1~$2~$3~$4~$5~$6')
-// } // Allow opt '6' after 1d
 
 GURPS.attributepaths = {
   ST: 'attributes.ST.value',
@@ -676,13 +674,13 @@ function performAction(action, actor, event) {
 
   if (action.type === 'pdf') {
     GURPS.handlePdf(action.link)
-    return
+    return true
   }
 
   if (action.type === 'modifier') {
     let mod = parseInt(action.mod)
     GURPS.ModifierBucket.addModifier(mod, action.desc)
-    return
+    return true
   }
 
   if (action.type === 'attribute')
@@ -707,11 +705,13 @@ function performAction(action, actor, event) {
   if (action.type === 'roll') {
     prefix = 'Rolling ' + action.formula + ' ' + action.desc
     formula = d6ify(action.formula)
+    if (!!action.costs) targetmods.push(GURPS.ModifierBucket.makeModifier(0, action.costs))
   }
 
   if (action.type === 'damage') {
+    if (!!action.costs) GURPS.ModifierBucket.addModifier(0, action.costs)
     GURPS.damageChat.create(actor || game.user, action.formula, action.damagetype, event)
-    return
+    return true
   }
 
   const BASIC_SWING = 'sw'
@@ -720,6 +720,7 @@ function performAction(action, actor, event) {
     if (!!actor) {
       let df = action.derivedformula == BASIC_SWING ? actordata.data.swing : actordata.data.thrust
       formula = df + action.formula
+      if (!!action.costs) GURPS.ModifierBucket.addModifier(0, action.costs)
       GURPS.damageChat.create(
         actor || game.user,
         formula,
@@ -727,7 +728,7 @@ function performAction(action, actor, event) {
         event,
         action.derivedformula + action.formula
       )
-      return
+      return true
     } else ui.notifications.warn('You must have a character selected')
 
   if (action.type === 'derivedroll')
@@ -735,6 +736,7 @@ function performAction(action, actor, event) {
       let df = action.derivedformula == BASIC_SWING ? actordata.data.swing : actordata.data.thrust
       formula = d6ify(df + action.formula)
       prefix = 'Rolling ' + action.derivedformula + action.formula + ' ' + action.desc
+      if (!!action.costs) targetmods.push(GURPS.ModifierBucket.makeModifier(0, action.costs))
     } else ui.notifications.warn('You must have a character selected')
 
   if (action.type === 'skill-spell')
@@ -744,8 +746,11 @@ function performAction(action, actor, event) {
       thing = action.name
       skill = GURPS.findSkillSpell(actordata, thing)
       if (!skill) {
+        if (!!action.default) {
+          if (GURPS.performAction(action.default, actor, event)) return true;
+        }
         ui.notifications.warn("No skill or spell named '" + action.name + "' found on " + actor.name)
-        return
+        return false
       }
       thing = skill.name
       target = parseInt(skill.level)
@@ -761,7 +766,7 @@ function performAction(action, actor, event) {
       att = GURPS.findAttack(actordata, thing)
       if (!att) {
         ui.notifications.warn("No melee or ranged attack named '" + action.name + "' found on " + actor.name)
-        return
+        return false
       }
       thing = att.name
       target = parseInt(att.level)
@@ -789,7 +794,7 @@ function performAction(action, actor, event) {
   if (action.type === 'block-parry')
     if (!!actor) {
       thing = action.desc
-      if (!action.melee) target = actordata.data[action.path] // Is there a basic parry or block stored, and we didn't try to identify a melee
+      if (!action.melee) target = actordata.data['equipped' + action.path] // Is there a basic parry or block stored, and we didn't try to identify a melee
       Object.values(actordata.data.melee).forEach((e) => {
         if (!target || target <= 0) {
           if (!!e[action.path]) {
@@ -812,15 +817,29 @@ function performAction(action, actor, event) {
       else ui.notifications.warn('Unable to find a ' + action.orig + ' to roll')
     } else ui.notifications.warn('You must have a character selected')
 
-  if (!!formula) doRoll(actor, formula, targetmods, prefix, thing, target, opt)
+  
+  if (!formula || target == 0 || isNaN(target)) return false // Target == 0, so no roll.  Target == -1 for non-targetted rolls (roll, damage)
+  doRoll(actor, formula, targetmods, prefix, thing, target, opt)
+  return true
 }
 GURPS.performAction = performAction
 
 function findSkillSpell(actor, sname) {
   sname = sname.split("*").join(".*");
+  let best = 0;
   var t;
-  recurselist(actor.data.skills, (s) => { if (s.name.match(sname)) t = s });
-  if (!t) recurselist(actor.data.spells, (s) => { if (s.name.match(sname)) t = s });
+  recurselist(actor.data.skills, (s) => { 
+    if (s.name.match(sname) && s.level > best) {
+      t = s
+      best = parseInt(s.level)
+    }
+  });
+  if (!t) recurselist(actor.data.spells, (s) => { 
+    if (s.name.match(sname) && s.level > best) {
+      t = s
+      best = parseInt(s.level)
+    }
+  });
   return t;
 }
 GURPS.findSkillSpell = findSkillSpell
@@ -898,13 +917,13 @@ GURPS.handleRoll = handleRoll
 
 // If the desc contains *Cost ?FP or *Max:9 then perform action
 function applyModifierDesc(actor, desc) {
-  let parse = desc.replace(/.*\* ?Costs? (\d+) ?FP.*/g, '$1')
-  if (parse != desc && !!actor) {
+  let parse = desc.replace(/.*\* ?[Cc]osts? (\d+) ?[Ff][Pp].*/g, '$1')
+  if (parse != desc && !!actor && !actor.isSelf) {
     let fp = parseInt(parse)
     fp = actor.data.data.FP.value - fp
     actor.update({ 'data.FP.value': fp })
   }
-  parse = desc.replace(/.*\*Max: ?(\d+).*/g, '$1')
+  parse = desc.replace(/.*\*[Mm]ax: ?(\d+).*/g, '$1')
   if (parse != desc) {
     return parseInt(parse)
   }
@@ -1203,6 +1222,78 @@ GURPS.ThreeD6 = new ThreeD6({
 
 GURPS.ConditionalInjury = new GURPSConditionalInjury()
 
+GURPS.onRightClickGurpslink = function(event) {
+    event.preventDefault();
+    let el = event.currentTarget;
+    let action = el.dataset.action;
+    if (!!action) {
+      action = JSON.parse(window.atob(action));
+      GURPS.whisperOtfToOwner(action.orig, event, (action.hasOwnProperty("blindroll") && !action.blindroll));  // only offer blind rolls for things that can be blind, No need to offer blind roll if it is already blind
+    }
+  }
+
+
+GURPS.whisperOtfToOwner = function(otf, event, canblind, actor) {
+    if (!game.user.isGM) return;
+    if (!!otf) {
+      otf = otf.replace(/ \(\)/g, "");  // sent as "name (mode)", and mode is empty (only necessary for attacks)
+      let users = actor?.getUsers(CONST.ENTITY_PERMISSIONS.OWNER, true).filter(u => !u.isGM) || []
+      let botf = "[!" + otf + "]"
+      otf = "[" + otf + "]";
+      let buttons = {};
+      buttons.one = {
+        icon: '<i class="fas fa-users"></i>',
+        label: "To Everyone",
+        callback: () => GURPS.sendOtfMessage(otf, false)
+      }
+      if (canblind)
+        buttons.two = {
+          icon: '<i class="fas fa-users-slash"></i>',
+          label: "Blindroll to Everyone",
+          callback: () => GURPS.sendOtfMessage(botf, true)
+        };
+      if (users.length > 0) {
+        let nms = users.map(u => u.name).join(' ');
+        buttons.three = {
+          icon: '<i class="fas fa-user"></i>',
+          label: "Whisper to " + nms,
+          callback: () => GURPS.sendOtfMessage(otf, false, users)
+        }
+        if (canblind)
+          buttons.four = {
+            icon: '<i class="fas fa-user-slash"></i>',
+            label: "Whisper Blindroll to " + nms,
+            callback: () => GURPS.sendOtfMessage(botf, true, users)
+          }
+      }
+
+      let d = new Dialog({
+        title: "GM 'Send Formula'",
+        content: `<div style='text-align:center'>How would you like to send the formula:<br><br><div style='font-weight:700'>${otf}<br>&nbsp;</div>`,
+        buttons: buttons,
+        default: "four"
+      });
+      d.render(true);
+    }
+  }
+  
+  
+GURPS.sendOtfMessage = function(content, blindroll, users) {
+    let msgData = {
+      content: content,
+      user: game.user._id,
+      blind: blindroll
+    }
+    if (!!users) {
+      msgData.type = CONST.CHAT_MESSAGE_TYPES.WHISPER;
+      msgData.whisper = users.map(it => it._id);
+    } else {
+      msgData.type = CONST.CHAT_MESSAGE_TYPES.OOC;
+    }
+    ChatMessage.create(msgData);
+  }
+
+
 /*********************  HACK WARNING!!!! *************************/
 /* The following method has been secretly added to the Object class/prototype to
    make it work like an Array. 
@@ -1262,136 +1353,8 @@ Hooks.once("init", async function () {
   Items.unregisterSheet('core', ItemSheet)
   Items.registerSheet('gurps', GurpsItemSheet, { makeDefault: true })
 
-  Hooks.on('chatMessage', (log, content, data) => {
-    if (!!data.alreadyProcessed) return true
-    if (content === '/help' || content === '!help') {
-      let c = "<a href='" + GURPS.USER_GUIDE_URL + "'>GURPS 4e Game Aid USERS GUIDE</a>"
-      c += '<br>/roll (or /r) [On-the-Fly formula]'
-      c += '<br>/private (or /pr) [On-the-Fly formula]'
-      c += '<br>/clearmb'
-      if (game.user.isGM) {
-        c += '<br>/sendmb &lt;playername&gt'
-        c += '<br>/mook'
-        c += '<br>/everyone (or /every) +/-N FP/HP'
-      }
-      ChatMessage.create({
-        content: c,
-        user: game.user._id,
-        type: CONST.CHAT_MESSAGE_TYPES.WHISPER,
-        whisper: [game.user._id],
-      })
-      return false
-    }
-    if (content === '/mook' && game.user.isGM) {
-      new NpcInput().render(true)
-      return false
-    }
-    
-    let m = content.match(/\/(everyone|every) ([+-])(\d+) ?([FfHh][Pp])/);
-    if (!!m && game.user.isGM) {
-     let c = []
-     game.actors.entities.forEach(actor => {
-        let users = actor.getUsers(CONST.ENTITY_PERMISSIONS.OWNER).filter(o => !o.isGM)
-        if (users.length > 0) {
-          let v = parseInt(m[3])
-          if (m[2] == "-") v = v * -1
-          let attr = m[4].toUpperCase()
-          let cur = actor.data.data[attr].value;
-          actor.update({ [ "data." + attr + ".value"] : cur + v });
-          c.push(`${actor.name} ${m[2]}${m[3]} ${m[4]}`)
-        }
-      })
-        
-      ChatMessage.create({
-        alreadyProcessed: true,
-        content: c.join("<br>"),
-        user: game.user._id,
-        type: CONST.CHAT_MESSAGE_TYPES.OOC
-      })
-      return false
-    }
 
-    let c = 'executing:'
-    let re = /^(\/r|\/roll|\/pr|\/private) \[([^\]]+)\]/
-    let found = false
-    let delayed = ''
-    content.split('\n').forEach((e) => {
-      // Handle multiline chat messages (mostly from macros)
-      let used = false
-      let m = e.match(re)
-      if (!!m && !!m[2]) {
-        let action = parselink(m[2])
-        if (!!action.action) {
-          c += '<br>' + e
-          GURPS.performAction(action.action, GURPS.LastActor, { shiftKey: e.startsWith('/pr') })
-          used = true
-        }
-      } else {
-        if (e === '/clearmb') {
-          c += '<br>' + e
-          GURPS.ModifierBucket.clear()
-          used = true
-        }
-        if (e.startsWith('/sendmb')) {
-          c += '<br>' + e
-          let user = e.replace(/\/sendmb/, '').trim()
-          GURPS.ModifierBucket.sendBucketToPlayer(user)
-          used = true
-        }
-      }
-      if (!used) delayed += e + '\n'
-      found = found || used
-    })
-    if (found) {
-      //     setTimeout(() => {
-      ChatMessage.create({
-        alreadyProcessed: true,
-        content: c,
-        user: game.user._id,
-        type: CONST.CHAT_MESSAGE_TYPES.WHISPER,
-        whisper: [game.user._id],
-      })
-      if (!!delayed) {
-        let d = duplicate(data)
-        d.content = delayed
-        d.alreadyProcessed = true
-        ChatMessage.create(d)
-      }
-      //       }, 500);
-      return false
-    }
-  })
-
-  // Look for blind messages with .message-results and remove them
-  /*	Hooks.on("renderChatMessage", (log, content, data) => {
-    if (!!data.message.blind) {
-        if (data.author?.isSelf && !data.author.isGm) {		// We are rendering the chat message for the sender (and they are not the GM)
-          $(content).find(".gurps-results").html("...");  // Replace gurps-results with "...".  Does nothing if not there.
-        }
-      }
-    });  */
-
-  // Add the "for" attribute to a collapsible panel label. This is needed
-  // because the server in 0.7.8 strips the "for" attribute in an attempt
-  // to guard against weird security hacks. When "for" is whitelisted as
-  // a valid attribute (future) we can remove this.
-  Hooks.on('renderChatMessage', (app, html, msg) => {
-    // this is a fucking hack
-    let wrapper = html.find('.collapsible-wrapper')
-    if (wrapper.length > 0) {
-      console.log($(wrapper).html())
-      let input = $(wrapper).find('input.toggle')[0]
-      let label = $(input).siblings('label.label-toggle')[0]
-      let id = input.id
-      let labelFor = $(label).attr('for')
-      if (labelFor !== id) {
-        $(label).attr('for', id)
-      }
-      console.log($(wrapper).html())
-    }
-  })
-
-  // Warning, the very firsttable will take a refresh for the dice to show up in the dialog.  Sorry, can't seem to get around that
+  // Warning, the very first table will take a refresh before the dice to show up in the dialog.  Sorry, can't seem to get around that
   Hooks.on('createRollTable', async function (entity, options, userId) {
     await entity.update({ img: 'systems/gurps/icons/single-die.png' })
     entity.data.img = 'systems/gurps/icons/single-die.png'
@@ -1483,40 +1446,20 @@ Hooks.once('ready', async function () {
     }
   })
 
-  Hooks.on('preCreateChatMessage', (data, options, userId) => {
-    let c = data.content
-    try {
-      let html = $(c)
-      let rt = html.find('.result-text') // Ugly hack to find results of a roll table to see if an OtF should be "rolled" /r /roll
-      let re = /^(\/r|\/roll|\/pr|\/private) \[([^\]]+)\]/
-      let t = rt[0]?.innerText
-      if (!!t) {
-        t.split('\n').forEach((e) => {
-          let m = e.match(re)
-          if (!!m && !!m[2]) {
-            let action = parselink(m[2])
-            if (!!action.action) {
-              GURPS.performAction(action.action, GURPS.LastActor, {
-                shiftKey: e.startsWith('/pr'),
-              })
-              //					return false;	// Return false if we don't want the rolltable chat message displayed.  But I think we want to display the rolltable result.
-            }
-          }
-        })
-      }
-    } catch (e) { } // a dangerous game... but limited to GURPs /roll OtF
-    data.content = game.GURPS.gurpslink(c)
-  })
-
-  Hooks.on('renderChatMessage', (app, html, msg) => {
-    GURPS.hookupGurps(html)
-  })
-
   Hooks.on('renderJournalSheet', (app, html, opts) => {
     let h = html.find('.editor-content')
     if (!!h) {
       h.html(GURPS.gurpslink(h[0].innerHTML))
       GURPS.hookupGurps(html)
+      html.find(".gurpslink").contextmenu(GURPS.onRightClickGurpslink);
+      html.find(".glinkmod").contextmenu(GURPS.onRightClickGurpslink);
+      html.find(".glinkmodplus").contextmenu(GURPS.onRightClickGurpslink);
+      html.find(".glinkmodminus").contextmenu(GURPS.onRightClickGurpslink);
+      html.find(".pdflink").contextmenu((event) => {
+        event.preventDefault();
+        let el = event.currentTarget;
+        GURPS.whisperOtfToOwner("PDF:" + el.innerText, event, false);
+      })
     }
   })
 
