@@ -246,190 +246,283 @@ GURPS.PARSELINK_MAPPINGS = {
 GURPS.SavedStatusEffects = CONFIG.statusEffects
 
 CONFIG.statusEffects = [
-  {
-    icon: 'systems/gurps/icons/status/aim.svg',
-    id: 'aim',
-    label: 'Aiming',
-  },
-  {
-    icon: 'systems/gurps/icons/status/bleeding.svg',
-    id: 'bleeding',
-    label: 'Bleeding',
-  },
-  {
-    icon: 'systems/gurps/icons/status/blinded.svg',
-    id: 'blinded',
-    label: 'Blinded',
-  },
-  {
-    icon: 'systems/gurps/icons/status/charmed.svg',
-    id: 'charmed',
-    label: 'Charmed',
-  },
-  {
-    icon: 'systems/gurps/icons/status/climbing.svg',
-    id: 'climbing',
-    label: 'Climbing',
-  },
-  {
-    icon: 'systems/gurps/icons/status/covered.svg',
-    id: 'covered',
-    label: 'Covered',
-  },
-  {
-    icon: 'systems/gurps/icons/status/crawling.svg',
-    id: 'crawling',
-    label: 'Crawling',
-  },
-  {
-    icon: 'systems/gurps/icons/status/crippled.svg',
-    id: 'crippled',
-    label: 'Crippled',
-  },
-  {
-    icon: 'systems/gurps/icons/status/crouching.svg',
-    id: 'crouching',
-    label: 'Crouching',
-  },
-  {
-    icon: 'systems/gurps/icons/status/dazed.svg',
-    id: 'dazed',
-    label: 'Dazed',
-  },
-  {
-    icon: 'systems/gurps/icons/status/dead.svg',
-    id: 'dead',
-    label: 'Dead',
-  },
-  {
-    icon: 'systems/gurps/icons/status/deafened.svg',
-    id: 'deafened',
-    label: 'Deafened',
-  },
-  {
-    icon: 'systems/gurps/icons/status/flying.svg',
-    id: 'flying',
-    label: 'Flying',
-  },
-  {
-    icon: 'systems/gurps/icons/status/frightened.svg',
-    id: 'frightened',
-    label: 'Frightened',
-  },
-  {
-    icon: 'systems/gurps/icons/status/grappled.svg',
-    id: 'grappled',
-    label: 'Grappled',
-  },
-  {
-    icon: 'systems/gurps/icons/status/helpless.svg',
-    id: 'helpless',
-    label: 'Helpless',
-  },
-  {
-    icon: 'systems/gurps/icons/status/holding breath red.svg',
-    id: 'holding_breath_red',
-    label: 'Holding Breath (Hyperventilated)',
-  },
-  {
-    icon: 'systems/gurps/icons/status/holding breath.svg',
-    id: 'holding_breath',
-    label: 'Holding Breath',
-  },
-  {
-    icon: 'systems/gurps/icons/status/incorporeal.svg',
-    id: 'incorporeal',
-    label: 'Incorporeal',
-  },
-  {
-    icon: 'systems/gurps/icons/status/kneeling.svg',
-    id: 'kneeling',
-    label: 'Kneeling',
-  },
-  {
-    icon: 'systems/gurps/icons/status/mounted.svg',
-    id: 'mounted',
-    label: 'Mounted',
-  },
-  {
-    icon: 'systems/gurps/icons/status/on fire.svg',
-    id: 'on_fire',
-    label: 'On Fire',
-  },
-  {
-    icon: 'systems/gurps/icons/status/opportunity fire.svg',
-    id: 'opportunity_fire',
-    label: 'Opportunity Fire',
-  },
-  {
-    icon: 'systems/gurps/icons/status/prone.svg',
-    id: 'prone',
-    label: 'Prone',
-  },
-  {
-    icon: 'systems/gurps/icons/status/weapon unready.svg',
-    id: 'weapon_unready',
-    label: 'Weapon Unready',
-  },
-  {
-    icon: 'systems/gurps/icons/status/ready.svg',
-    id: 'ready',
-    label: 'Ready',
-  },
-  {
-    icon: 'systems/gurps/icons/status/reloading.svg',
-    id: 'reloading',
-    label: 'Reloading',
-  },
-  {
-    icon: 'systems/gurps/icons/status/stunned.svg',
-    id: 'stunned',
-    label: 'Stunned',
-  },
-  {
-    icon: 'systems/gurps/icons/status/surprised.svg',
-    id: 'surprised',
-    label: 'Surprised',
-  },
-  {
-    icon: 'systems/gurps/icons/status/unconscious.svg',
-    id: 'unconscious',
-    label: 'Unconscious',
-  },
-  {
-    icon: 'systems/gurps/icons/status/vehicle.svg',
-    id: 'vehicle',
-    label: 'Vehicle',
-  },
-  {
-    icon: 'systems/gurps/icons/status/weapon dropped.svg',
-    id: 'weapon_dropped',
-    label: 'Weapon Dropped',
-  },
-  {
-    icon: 'systems/gurps/icons/status/shock -1.svg',
-    id: 'shock1',
-    label: 'Shock -1',
-  },
-  {
-    icon: 'systems/gurps/icons/status/shock -2.svg',
-    id: 'shock2',
-    label: 'Shock -2',
-  },
-  {
-    icon: 'systems/gurps/icons/status/shock -3.svg',
-    id: 'shock3',
-    label: 'Shock -3',
-  },
-  {
-    icon: 'systems/gurps/icons/status/shock -4.svg',
-    id: 'shock4',
-    label: 'Shock -4',
-  },
+  // {
+  //   icon: 'systems/gurps/icons/status/aim.svg',
+  //   id: 'aim',
+  //   label: 'Aiming',
+  // },
+  // {
+  //   icon: 'systems/gurps/icons/status/bleeding.svg',
+  //   id: 'bleeding',
+  //   label: 'Bleeding',
+  // },
+  // {
+  //   icon: 'systems/gurps/icons/status/blinded.svg',
+  //   id: 'blinded',
+  //   label: 'Blinded',
+  // },
+  // {
+  //   icon: 'systems/gurps/icons/status/charmed.svg',
+  //   id: 'charmed',
+  //   label: 'Charmed',
+  // },
+  // {
+  //   icon: 'systems/gurps/icons/status/climbing.svg',
+  //   id: 'climbing',
+  //   label: 'Climbing',
+  // },
+  // {
+  //   icon: 'systems/gurps/icons/status/covered.svg',
+  //   id: 'covered',
+  //   label: 'Covered',
+  // },
+  // {
+  //   icon: 'systems/gurps/icons/status/crawling.svg',
+  //   id: 'crawling',
+  //   label: 'Crawling',
+  // },
+  // {
+  //   icon: 'systems/gurps/icons/status/crippled.svg',
+  //   id: 'crippled',
+  //   label: 'Crippled',
+  // },
+  // {
+  //   icon: 'systems/gurps/icons/status/crouching.svg',
+  //   id: 'crouching',
+  //   label: 'Crouching',
+  // },
+  // {
+  //   icon: 'systems/gurps/icons/status/dazed.svg',
+  //   id: 'dazed',
+  //   label: 'Dazed',
+  // },
+  // {
+  //   icon: 'systems/gurps/icons/status/dead.svg',
+  //   id: 'dead',
+  //   label: 'Dead',
+  // },
+  // {
+  //   icon: 'systems/gurps/icons/status/deafened.svg',
+  //   id: 'deafened',
+  //   label: 'Deafened',
+  // },
+  // {
+  //   icon: 'systems/gurps/icons/status/flying.svg',
+  //   id: 'flying',
+  //   label: 'Flying',
+  // },
+  // {
+  //   icon: 'systems/gurps/icons/status/frightened.svg',
+  //   id: 'frightened',
+  //   label: 'Frightened',
+  // },
+  // {
+  //   icon: 'systems/gurps/icons/status/grappled.svg',
+  //   id: 'grappled',
+  //   label: 'Grappled',
+  // },
+  // {
+  //   icon: 'systems/gurps/icons/status/helpless.svg',
+  //   id: 'helpless',
+  //   label: 'Helpless',
+  // },
+  // {
+  //   icon: 'systems/gurps/icons/status/holding breath red.svg',
+  //   id: 'holding_breath_red',
+  //   label: 'Holding Breath (Hyperventilated)',
+  // },
+  // {
+  //   icon: 'systems/gurps/icons/status/holding breath.svg',
+  //   id: 'holding_breath',
+  //   label: 'Holding Breath',
+  // },
+  // {
+  //   icon: 'systems/gurps/icons/status/incorporeal.svg',
+  //   id: 'incorporeal',
+  //   label: 'Incorporeal',
+  // },
+  // {
+  //   icon: 'systems/gurps/icons/status/kneeling.svg',
+  //   id: 'kneeling',
+  //   label: 'Kneeling',
+  // },
+  // {
+  //   icon: 'systems/gurps/icons/status/mounted.svg',
+  //   id: 'mounted',
+  //   label: 'Mounted',
+  // },
+  // {
+  //   icon: 'systems/gurps/icons/status/on fire.svg',
+  //   id: 'on_fire',
+  //   label: 'On Fire',
+  // },
+  // {
+  //   icon: 'systems/gurps/icons/status/opportunity fire.svg',
+  //   id: 'opportunity_fire',
+  //   label: 'Opportunity Fire',
+  // },
+  // {
+  //   icon: 'systems/gurps/icons/status/prone.svg',
+  //   id: 'prone',
+  //   label: 'Prone',
+  // },
+  // {
+  //   icon: 'systems/gurps/icons/status/weapon unready.svg',
+  //   id: 'weapon_unready',
+  //   label: 'Weapon Unready',
+  // },
+  // {
+  //   icon: 'systems/gurps/icons/status/ready.svg',
+  //   id: 'ready',
+  //   label: 'Ready',
+  // },
+  // {
+  //   icon: 'systems/gurps/icons/status/reloading.svg',
+  //   id: 'reloading',
+  //   label: 'Reloading',
+  // },
+  // {
+  //   icon: 'systems/gurps/icons/status/stunned.svg',
+  //   id: 'stunned',
+  //   label: 'Stunned',
+  // },
+  // {
+  //   icon: 'systems/gurps/icons/status/surprised.svg',
+  //   id: 'surprised',
+  //   label: 'Surprised',
+  // },
+  // {
+  //   icon: 'systems/gurps/icons/status/unconscious.svg',
+  //   id: 'unconscious',
+  //   label: 'Unconscious',
+  // },
+  // {
+  //   icon: 'systems/gurps/icons/status/vehicle.svg',
+  //   id: 'vehicle',
+  //   label: 'Vehicle',
+  // },
+  // {
+  //   icon: 'systems/gurps/icons/status/weapon dropped.svg',
+  //   id: 'weapon_dropped',
+  //   label: 'Weapon Dropped',
+  // },
+  // {
+  //   icon: 'systems/gurps/icons/status/shock -1.svg',
+  //   id: 'shock1',
+  //   label: 'Shock -1',
+  // },
+  // {
+  //   icon: 'systems/gurps/icons/status/shock -2.svg',
+  //   id: 'shock2',
+  //   label: 'Shock -2',
+  // },
+  // {
+  //   icon: 'systems/gurps/icons/status/shock -3.svg',
+  //   id: 'shock3',
+  //   label: 'Shock -3',
+  // },
+  // {
+  //   icon: 'systems/gurps/icons/status/shock -4.svg',
+  //   id: 'shock4',
+  //   label: 'Shock -4',
+  // },
   {
     icon: 'systems/gurps/icons/status/waiting.svg',
     id: 'wait',
     label: 'Wait',
+    icon: 'systems/gurps/icons/statuses/condition-shock1.png',
+    id: 'shock1',
+    label: 'EFFECT.StatusShocked',
+  },
+  {
+    icon: 'systems/gurps/icons/statuses/condition-shock2.png',
+    id: 'shock2',
+    label: 'EFFECT.StatusShocked',
+  },
+  {
+    icon: 'systems/gurps/icons/statuses/condition-shock3.png',
+    id: 'shock3',
+    label: 'EFFECT.StatusShocked',
+  },
+  {
+    icon: 'systems/gurps/icons/statuses/condition-shock4.png',
+    id: 'shock4',
+    label: 'EFFECT.StatusShocked',
+  },
+  {
+    icon: 'systems/gurps/icons/statuses/dd-condition-stunned.png',
+    id: 'stun',
+    label: 'EFFECT.StatusStunned',
+  },
+  {
+    icon: 'systems/gurps/icons/statuses/dd-condition-prone.png',
+    id: 'prone',
+    label: 'EFFECT.StatusProne',
+  },
+  {
+    icon: 'systems/gurps/icons/statuses/condition-kneel.png',
+    id: 'kneel',
+    label: 'GURPS.STATUSKneel',
+  },
+  {
+    icon: 'systems/gurps/icons/statuses/condition-crouch.png',
+    id: 'crouch',
+    label: 'GURPS.STATUSCrouch',
+  },
+  {
+    icon: 'systems/gurps/icons/statuses/condition-sit.png',
+    id: 'sit',
+    label: 'GURPS.STATUSSit',
+  },
+  {
+    icon: 'systems/gurps/icons/statuses/path-condition-fascinated.png',
+    id: 'euphoria',
+    label: 'GURPS.STATUSEuphoria',
+  },
+  {
+    icon: 'systems/gurps/icons/statuses/condition-cough.png',
+    id: 'coughing',
+    label: 'GURPS.STATUSCoughing',
+  },
+  {
+    icon: 'systems/gurps/icons/statuses/condition-wretch.png',
+    id: 'retching',
+    label: 'GURPS.STATUSRetching',
+  },
+  {
+    icon: 'systems/gurps/icons/statuses/x-drowsy.png',
+    id: 'drowsy',
+    label: 'GURPS.STATUSDrowsy',
+  },
+  {
+    icon: 'systems/gurps/icons/statuses/condition-drunk1.png',
+    id: 'tipsy',
+    label: 'GURPS.STATUSTipsy',
+  },
+  {
+    icon: 'systems/gurps/icons/statuses/condition-drunk2.png',
+    id: 'drunk',
+    label: 'GURPS.STATUSDrunk',
+  },
+  {
+    icon: 'systems/gurps/icons/statuses/path-condition-nauseated.png',
+    id: 'nauseated',
+    label: 'GURPS.STATUSNauseated',
+  },
+  {
+    icon: 'systems/gurps/icons/statuses/condition-pain2.png',
+    id: 'moderate',
+    label: 'GURPS.STATUSModerate',
+  },
+  {
+    icon: 'systems/gurps/icons/statuses/condition-pain4.png',
+    id: 'severe',
+    label: 'GURPS.STATUSSevere',
+  },
+  {
+    icon: 'systems/gurps/icons/statuses/condition-pain6.png',
+    id: 'terrible',
+    label: 'GURPS.STATUSTerrible',
   }
 ]
 
