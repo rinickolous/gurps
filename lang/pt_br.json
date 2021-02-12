@@ -85,6 +85,7 @@
   "GURPS.rsl" :"NH Rel",
   "GURPS.spells" :"Magias",
   "GURPS.spellClass" :"Classe",
+  "GURPS.spellCollege" : "Faculdade",
   "GURPS.spellCost" :"Custo",
   "GURPS.spellMaintain" :"Manter",
   "GURPS.spellTime" :"Tempo",
@@ -228,6 +229,7 @@
   "GURPS.forTurns" : "por {turns} turnos",
   "GURPS.suffersA" : "recebe um ",
   "GURPS.for" : "devido a ",
+  "GURPS.highest" : "Highest",
   "GURPS.of" : "de ",
   "GURPS.effectsDoubles" : "dobra",
   "GURPS.effectsNotApplicableDefenses" : "Não se aplica a Defesas Ativas ou outras reações defensivas. Consulte ",
@@ -276,5 +278,11 @@
   "GURPS.BODYPLANcancroid" : "Cancróide",
   "GURPS.BODYPLANscorpion" : "Escorpião",
   "GURPS.BODYPLANichthyoid" : "Ictióde",
-  "GURPS.BODYPLANarachnoid" : "Aracnóide"
+  "GURPS.BODYPLANarachnoid" : "Aracnóide",
+
+  "GURPS.RESOLVEDAMAGETitle": "Explicar Rolagem de Dano",
+  "GURPS.RESOLVEDAMAGEPrompt": "O que você quer fazer com esta rolagem de dano?",
+  "GURPS.RESOLVEDAMAGEQuantity": "Número de rolagens:",
+  "GURPS.RESOLVEDAMAGESendTo": "Enviar OtF para...",
+  "GURPS.RESOLVEDAMAGEMultiple": "Rolagens múltiplas"
 }

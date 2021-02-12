@@ -1,6 +1,6 @@
 ### Users Guide for [GURPS 4e game aid for Foundry VTT](https://bit.ly/2JaSlQd)
 
-# Current Release Version 0.8.13
+# Current Release Version 0.8.14
 [If you like our work...](https://ko-fi.com/crnormand)
 
 <a href="https://ko-fi.com/crnormand"><img height="36" src="https://cdn.ko-fi.com/cdn/kofi2.png?v=2"></a>
@@ -10,17 +10,30 @@ To install the latest stable release, use this manifest URL:
 
 [Getting Started video](https://youtu.be/FUqtOkdyBCo) / [Players Guide video](https://youtu.be/x-xD39x_JQw)
 
-Join us on Discord: [GURPS Foundry-VTT Discord](https://discord.gg/7qzzgJDT)
+Join us on Discord: [GURPS Foundry-VTT Discord](https://discord.gg/6xJBcYWyED)
 
 ## The 'main' branch is being actively developed... and it may break things.   
 ### If you are looking for the latest stable release, use the manifest URL above.
-[Current GCA Export version: 'GCA-3' 2/04/2021 / Current GCS Export version: 'GCS-3' 1/31/2021](https://drive.google.com/file/d/1vbDb9WtYQiZI78Pwa_TlEvYpJnR_S67B/view?usp=sharing)
+[Current GCA Export version: 'GCA-4' 2/08/2021 / Current GCS Export version: 'GCS-3' 1/31/2021](https://drive.google.com/file/d/1vbDb9WtYQiZI78Pwa_TlEvYpJnR_S67B/view?usp=sharing)
 
 This is what we are currently working on:
 
-- 0.8.14 
+- 0.8.15
 
 ### History
+- 0.8.14 - 2/11/2021
+    - Added Explosion damage calculation to Damage Calculator
+    	- either as a single damage roll applied multiple times to different targets, or right-click on the damage roll to be prompted for the number of rolls to generate
+    - Fixed a few issues with the Modifier Bucket, Targeted Chat messages, and others.
+    - pagerefs can be http links (and will show up as '*Link')
+    - SHIFT-Apply keeps Damage Dialog open (to allow multiple RoF damage results)
+    - Removed hitlocation eqt tooltip (no longer valid)
+    - Allow multiple modifiers [+1 to hit & +2 lucky]
+    - Fixed actors not having the new calculated values (currentdodge, currentmove, equippedparry, equippedblock)
+    - Added Mook Generator defaults editor
+    - GCA export/import now handles parents for Ads/Disads/Spells and Skills
+    - Rewrite of damage parser, more uniform handling of multipliers/divisors, etc.  support for const damage [1 cut]
+    - Don't tell anyone, but we now support any sided dice for non-targeted, non-derived damage rolls [3d4], [2d20 cut]
 
 - 0.8.13 - 2/6/2021
     - @Tratz engaged [R.K. Media](https://marketplace.roll20.net/browse/publisher/507/rk-media) to upgrade our icons.   
