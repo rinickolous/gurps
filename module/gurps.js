@@ -67,8 +67,8 @@ GURPS.SetLastActor = function (actor) {
 GURPS.ClearLastActor = function (actor) {
   if (GURPS.LastActor == actor) {
     console.log('Clearing Last Actor:' + GURPS.LastActor?.name)
-    GURPS.ModifierBucket.refresh()
     GURPS.LastActor = null
+    GURPS.ModifierBucket.refresh()
     if (canvas.tokens.controlled.length > 0) {
       GURPS.SetLastActor(canvas.tokens.controlled[0].actor)
     } // There may still be tokens selected... if so, select one of them
@@ -868,7 +868,7 @@ async function performAction(action, actor, event, targets) {
   }
 
   if (action.type === 'roll') {
-    prefix = 'Rolling ' + action.formula + ' ' + action.desc
+    prefix = 'Rolling ' + ((!!action.displayformula) ? action.displayformula : action.formula) + ' ' + action.desc
     formula = action.formula
     if (!!action.costs) targetmods.push(GURPS.ModifierBucket.makeModifier(0, action.costs))
   }
@@ -1603,9 +1603,18 @@ Hooks.once('init', async function () {
   CONFIG.Item.entityClass = GurpsItem
 
   // preload drag-and-drop image
-  let img = new Image()
-  img.src = 'systems/gurps/icons/blood-splatter-clipart-small.png'
-  GURPS.damageDragImage = img
+  {
+    let img = new Image()
+    img.src = 'systems/gurps/icons/blood-splatter-clipart-small.png'
+    GURPS.damageDragImage = img
+  }
+
+  // LOAD ALL THE THINGS!!!
+  {
+    let img = new Image()
+    img.src = 'systems/gurps/icons/all-the-things-transparent.png'
+    GURPS.allTheThingsImage = img
+  }
 
   // Register sheet application classes
   Actors.unregisterSheet('core', ActorSheet)
