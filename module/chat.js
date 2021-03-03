@@ -1,6 +1,7 @@
 'use strict'
 import { parselink } from '../lib/parselink.js'
 import { NpcInput } from '../lib/npc-input.js'
+import { Equipment } from './actor.js'
 
 /**
  *  This holds functions for all things chat related
@@ -36,7 +37,7 @@ function send(priv, pub, data) {
  
 export default function addChatHooks() {
 
-  Hooks.once('ready', async function () {
+  Hooks.once('init', async function () {
    
     let send = (msgs) => {
       if (msgs.priv.length > 0) {
@@ -69,7 +70,7 @@ export default function addChatHooks() {
         send(msgs)
       msgs.priv.push(text);
     } 
-   
+    
     Hooks.on('chatMessage', (log, message, data) => {
       if (!!data.alreadyProcessed) return true    // The chat message has already been parsed for GURPS commands show it should just be displayed
       if (GURPS.ChatCommandsInProcess.includes(message)) {
@@ -83,15 +84,23 @@ export default function addChatHooks() {
       let msgs = { pub: [], priv: [], data: data }
       let handled = false
       message.split('\n').forEach((line) => {
+        var m
         if (line === '/help' || line === '!help') {
           let c = "<a href='" + GURPS.USER_GUIDE_URL + "'>GURPS 4e Game Aid USERS GUIDE</a>"
           c += '<br>/roll (or /r) [On-the-Fly formula]'
           c += '<br>/private (or /pr) [On-the-Fly formula]'
           c += '<br>/clearmb'
           c += '<br>/:&lt;macro name&gt'
+          c += '<br>/fp &lt;formula&gt;'
+          c += '<br>/hp &lt;formula&gt;'
+          c += '<br>/trackerN (N=0-3) &lt;formula&gt;'
+          c += '<br>/tracker(&lt;name&gt;) &lt;formula&gt;'
+          c += '<br>/qty &lt;formula&gt; &lt;equipment name&gt;'
+          c += '<br>/uses &lt;formula&gt; &lt;equipment name&gt;'
+          c += '<br>/status on|off|t|toggle &lt;status&gt;'
           if (game.user.isGM) {
             c += '<br> --- GM only ---'
-            c += '<br>/sendmb &lt;playername&gt'
+            c += '<br>/sendmb &lt;OtF&gt &lt;playername(s)&gt'
             c += '<br>/mook'
             c += '<br>/everyone (or /ev) &lt;formula&gt;'
           }
@@ -105,34 +114,273 @@ export default function addChatHooks() {
           handled = true
           return
         }
-      
-        // /everyone +1 fp or /everyone -2d-1 fp
-        let m = line.match(/\/(everyone|ev) ([+-]\d+d)?([+-]\d+)?(!)? ?([FfHh][Pp])/);
+        
+        m = line.match(/\/(st|status) (t|toggle|on|off|\+|-) ([^ ]+)(@self)?/i)
         if (!!m) {
+          let pattern =  new RegExp('^' + (m[3].trim().split('*').join('.*').replace(/\(/g, '\\(').replace(/\)/g, '\\)')), 'i') // Make string into a RegEx pattern
+          let any = false
+          let on = false
+          let set = m[2].toLowerCase() == "on" || m[2] == '+'
+          let toggle = m[2].toLowerCase() == "t" || m[2].toLowerCase() == "toggle"
+          var effect, msg
+          Object.values(CONFIG.statusEffects).forEach(s => {
+            let nm = game.i18n.localize(s.label)
+            if (nm.match(pattern)) effect = s   // match on name or id (shock1, shock2, etc.)
+            if (s.id.match(pattern)) effect = s
+          })
+          if (!effect) 
+            ui.notifications.warn("No status matched '" + pattern + "'")
+          else if (!!m[4]) {
+            if (!!GURPS.LastActor) {
+              let tokens = GURPS.LastActor?.getActiveTokens()
+              if (tokens.length == 0)
+                msg = "Your character does not have any tokens.   We require a token to set statuses"
+              else {
+                GURPS.LastActor.effects.forEach(e => { 
+                  if (effect.id == e.getFlag("core", "statusId")) on = true 
+                })
+                if ((on & !set) || (!on && set) || toggle) {
+                  priv(`Toggling ${game.i18n.localize(effect.label)} for ${GURPS.LastActor.name}`, msgs)
+                  t.toggleEffect(effect)
+                }
+              } 
+            } else msg = "You must select a character to apply status effects"
+          } else {
+            msg = "You must select tokens (or use @self) to apply status effects"
+            canvas.tokens.controlled.forEach(t => {
+              any = true
+              if (!!t.actor) 
+                t.actor.effects.forEach(e => { 
+                  if (effect.id == e.getFlag("core", "statusId")) on = true 
+                })
+              if ((on & !set) || (!on && set) || toggle) {
+                priv(`Toggling ${game.i18n.localize(effect.label)} for ${t.actor.name}`, msgs)
+                t.toggleEffect(effect)
+              }
+            })
+          }
+          if (!any) ui.notifications.warn(msg)
+          handled = true
+          return          
+        }
+        
+        m = line.match(/\/qty ([\+-=]\d+)(.*)/i)
+        if (!!m) {
+          let actor = GURPS.LastActor
+          if (!actor)
+            ui.notifications.warn('You must have a character selected')
+          else {
+            let pattern = m[2].trim()
+            let [eqt, key] = actor.findEquipmentByName(pattern)
+            if (!eqt)
+              ui.notifications.warn("No equipment matched '" + pattern + "'")
+            else {
+              eqt = duplicate(eqt)
+              let delta = parseInt(m[1])
+              if (isNaN(delta)) {   // only happens with '='
+                delta = parseInt(m[1].substr(1))
+                if (isNaN(delta))
+                  ui.notifications.warn(`Unrecognized format '${m[1]}'`)
+                else {
+                  eqt.count = delta
+                  actor.update({ [key]: eqt }).then(() => actor.updateParentOf(key))
+                  priv(`${eqt.name} set to ${delta}`, msgs)
+                }
+              } else {
+                let q = eqt.count + delta
+                if (q < 0) 
+                  ui.notifications.warn("You do not have enough '" + eqt.name + "'")
+                else {
+                  priv(`${eqt.name} QTY ${m[1]}`, msgs)
+                  eqt.count = q
+                  actor.update({ [key]: eqt }).then(() => actor.updateParentOf(key))
+                }
+              } 
+            }      
+          }   
+          handled = true
+          return     
+        }
+        
+        m = line.match(/\/uses ([\+-=]\w+)?(reset)?(.*)/i)
+        if (!!m) {
+          let actor = GURPS.LastActor
+          if (!actor)
+            ui.notifications.warn('You must have a character selected')
+          else {
+            let pattern = m[3].trim()
+            let [eqt, key] = actor.findEquipmentByName(pattern)
+            if (!eqt)
+              ui.notifications.warn("No equipment matched '" + pattern + "'")
+            else {
+              eqt = duplicate(eqt)
+              let delta = parseInt(m[1])
+              if (!!m[2]) {
+                priv(`${eqt.name} USES reset to MAX USES (${eqt.maxuses})`, msgs)
+                eqt.uses = eqt.maxuses
+                actor.update({ [key]: eqt })    
+              } else if (isNaN(delta)) {   // only happens with '='
+                delta = m[1].substr(1)
+                eqt.uses = delta
+                actor.update({ [key]: eqt })
+                priv(`${eqt.name} USES set to ${delta}`, msgs)         
+              } else {
+                let q = parseInt(eqt.uses) + delta
+                let max = parseInt(eqt.maxuses)
+                if (isNaN(q))
+                  ui.notifications.warn(eqt.name + " 'uses' is not a number")
+                else if (q < 0) 
+                  ui.notifications.warn(eqt.name + " does not have enough USES")
+                else if (!isNaN(max) && max > 0 && q > max)
+                  ui.notifications.warn("Exceeded max uses (${max}) for " + eqt.name)
+                else {
+                  priv(`${eqt.name} USES ${m[1]} = ${q}`, msgs)
+                  eqt.uses = q
+                  actor.update({ [key]: eqt })
+                }
+              } 
+            }      
+          }   
+          handled = true
+          return     
+        }
+
+        m = line.match(/\/([fh]p) ([+-=]\d+)?(reset)?(.*)/i)
+        if (!!m) {
+          let actor = GURPS.LastActor
+          if (!actor)
+            ui.notifications.warn('You must have a character selected')
+          else {
+            let attr = m[1].toUpperCase()
+            let delta = parseInt(m[2])
+            const max = actor.data.data[attr].max
+            let reset = ''
+            if (!!m[3]) {
+              actor.update({ [ "data." + attr + ".value"] : max })
+              priv(`${actor.name} reset to ${max} ${attr}`, msgs)
+            } else if (isNaN(delta)) {   // only happens with '='
+              delta = parseInt(m[2].substr(1))
+              if (isNaN(delta))
+                ui.notifications.warn(`Unrecognized format for '/${attr} ${m[4]}'`)
+              else {
+                let mtxt = ''
+                if (delta > max) {
+                  delta = max
+                  mtxt = ` (max: ${max})`
+                }
+                actor.update({ [ "data." + attr + ".value"] : delta })
+                priv(`${actor.name} set to ${delta} ${attr}${mtxt}`, msgs)
+              }
+            } else if (!!m[2]) {
+                let mtxt = ''
+                delta += actor.data.data[attr].value
+                if (delta > max) {
+                  delta = max
+                  mtxt = ` (max: ${max})`
+                }
+              actor.update({ [ "data." + attr + ".value"] : delta })
+              priv(`${actor.name} ${m[2]} ${attr}${mtxt}`, msgs)
+            } else
+              ui.notifications.warn(`Unrecognized format for '/${attr} ${m[4]}'`)
+          }  
+          handled = true
+          return      
+        }
+ 
+        m = line.match(/\/(tracker|tr|rt|resource)([0123])?(\(([^\)]+)\))? ([+-=]\d+)?(reset)?(.*)/i)
+        if (!!m) {
+          let actor = GURPS.LastActor
+          if (!actor)
+            ui.notifications.warn('You must have a character selected')
+          else {
+            let tracker = parseInt(m[2])
+            let display = tracker
+            if (!!m[3]) {
+              for (const [key, value] of Object.entries(actor.data.data.additionalresources.tracker)) {
+                if (value.name.match(m[4])) {
+                  tracker = key
+                  display = "(" + value.name + ")"
+                }
+              } 
+            }
+            let delta = parseInt(m[5])
+            let reset = ''
+            let max = actor.data.data.additionalresources.tracker[tracker].max
+            if (!!m[6]) {
+              actor.update({ ["data.additionalresources.tracker." + tracker + ".value"] : max})
+              priv(`Resource Tracker${display} reset to ${max}`, msgs)
+            } else if (isNaN(delta)) {    // only happens with '='
+              delta = parseInt(m[5].substr(1))
+              if (isNaN(delta))
+                ui.notifications.warn(`Unrecognized format for '${line}'`)
+              else {
+                actor.update({ ["data.additionalresources.tracker." + tracker + ".value"] : delta})
+                priv(`Resource Tracker${display} set to ${delta}`, msgs)
+              }           
+            } else if (!!m[5]) {
+              if (max == 0) max = Number.MAX_SAFE_INTEGER
+              let v = actor.data.data.additionalresources.tracker[tracker].value + delta
+              if (v > max) {
+                ui.notifications.warn(`Exceeded MAX:${max} for Resource Tracker${tracker}`)
+                v = max
+              }
+              actor.update({ ["data.additionalresources.tracker." + tracker + ".value"] : v })
+              priv(`Resource Tracker${display} ${m[5]} = ${v}`, msgs)
+            } else
+              ui.notifications.warn(`Unrecognized format for '${line}'`)
+          }  
+          handled = true
+          return      
+        }
+     
+        // /everyone +1 fp or /everyone -2d-1 fp
+        m = line.match(/\/(everyone|ev) ([fh]p) ([+-]\d+d\d*)?([+-=]\d+)?(!)?/i);
+        if (!!m && (!!m[3] || !!m[4])) {
           if (game.user.isGM) {
             let any = false
             game.actors.entities.forEach(actor => {
-              let users = actor.getUsers(CONST.ENTITY_PERMISSIONS.OWNER).filter(o => !o.isGM)
-              if (users.length > 0) {
+              if (actor.hasPlayerOwner) {
                 any = true
-                let mod = m[3] || ""
-                let value = mod;
-                let dice = m[2] || "";
+                let mod = m[4] || ""
+                let value = mod
+                let dice = m[3] || "";
+                let txt = ''
                 if (!!dice) {
                   let sign = (dice[0] == "-") ? -1 : 1
-                  let roll = Roll.create(dice.substring(1, dice.length) + "6 " + mod).evaluate()
+                  let d = dice.match(/[+-](\d+)d(\d*)/)
+                  let r = d[1] + "d" + (!!d[2] ? d[2] : "6")
+                  let roll = Roll.create(r).evaluate()
                   if (niceDice) game.dice3d.showForRoll(roll, game.user, data.whisper)
-                  value = Math.max(roll.total, !!m[4] ? 1 : 0)
+                  value = roll.total
+                  if (!!mod)
+                    if (isNaN(mod)) {
+                      ui.notifications.warn(`Unrecognized format for '${line}'`)
+                      handled = true
+                      return              
+                    } else value += parseInt(mod)
+                  value = Math.max(value, !!m[5] ? 1 : 0)
                   value *= sign
-                  if (!!m[4]) mod += m[4]
+                  txt = `(${value}) `
                 } 
-                let attr = m[5].toUpperCase()
+                let attr = m[2].toUpperCase()
                 let cur = actor.data.data[attr].value
-                let newval = cur + parseInt(value)
-                if (newval > actor.data.data[attr].max) newval = Math.max(cur, actor.data.data[attr].max)
+                let newval = parseInt(value)
+                if (isNaN(newval)) {    // only happens on =10
+                  newval = parseInt(value.substr(1))
+                  if (isNaN(newval)) {
+                    ui.notifications.warn(`Unrecognized format for '${line}'`)
+                    handled = true
+                    return
+                  }
+                } else newval += cur
+                let mtxt = ''
+                let max = actor.data.data[attr].max
+                if (newval > max) {
+                  newval = max
+                  mtxt = `(max: ${max})`
+                }
                 actor.update({ [ "data." + attr + ".value"] : newval })
-                let t = (mod != value) ? `(${value})` : ""
-                priv(`${actor.name} ${dice}${mod} ${t} ${m[5]}`, msgs)
+                priv(`${actor.name} ${attr} ${dice}${mod} ${txt}${mtxt}`, msgs)
               }
             }) 
             if (!any) priv(`There are no player owned characters!`, msgs)
@@ -142,19 +390,18 @@ export default function addChatHooks() {
           return
          }
         
-        // /everyone reset fp/hp
-        m = line.match(/\/(everyone|ev) reset ([FfHh][Pp])/);
+        // /everyone fp/hp reset
+        m = line.match(/\/(everyone|ev) ([fh]p) reset/i);
         if (!!m) {
           if (game.user.isGM) {
             let any = false
             game.actors.entities.forEach(actor => {
-              let users = actor.getUsers(CONST.ENTITY_PERMISSIONS.OWNER).filter(o => !o.isGM)
-              if (users.length > 0) {
+             if (actor.hasPlayerOwner) {
                 any = true
                 let attr = m[2].toUpperCase()
                 let max = actor.data.data[attr].max
                 actor.update({ [ "data." + attr + ".value"] : max })
-                priv(`${actor.name} reset to ${max} ${m[2]}`, msgs)
+                priv(`${actor.name} ${attr} reset to ${max}`, msgs)
               }
             })  
             if (!any) priv(`There are no player owned characters!`, msgs)
@@ -188,7 +435,17 @@ export default function addChatHooks() {
           if (game.user.isGM) {
             priv(line, msgs)
             let user = line.replace(/\/sendmb/, '').trim()
-            GURPS.ModifierBucket.sendBucketToPlayer(user)
+            let m = user.match(/\[(.*)\](.*)/)
+            if (!!m) {
+              let otf = m[1]
+              let t = parselink(otf)
+              if (!!t.action && t.action.type == 'modifier')
+                GURPS.ModifierBucket.sendToPlayer(t.action, m[2])
+              else
+                GURPS.ModifierBucket.sendBucketToPlayer(user)
+            }
+            else
+              GURPS.ModifierBucket.sendBucketToPlayer(user)
           } else 
             priv(`You must be a GM to execute '${line}'`, msgs)
           handled = true

@@ -23,24 +23,59 @@ export class GurpsActor extends Actor {
   
   // This will ensure that every characater at least starts with these new data values.  actor-sheet.js may change them.
   calculateDerivedValues() {
-    if (!this.data.data.currentdodge || !this.data.data.currentmove) {
-      let encs = this.data.data.encumbrance;
+    const encs = this.data.data.encumbrance;
+    const isReeling = !!this.data.data.additionalresources.isReeling
+    const isTired = !!this.data.data.additionalresources.isTired
+    this.data.data.attributes.ST.currentvalue = isTired ? Math.ceil(parseInt(this.data.data.attributes.ST.value) / 2) : this.data.data.attributes.ST.value
+    // We must assume that the first level of encumbrance has the finally calculated move and dodge settings
+    if (!!encs) {
+      const level0 = encs[GURPS.genkey(0)]    // if there are encumbrances, there will always be a level0
+      let m = parseInt(level0.move)
+      let d = parseInt(level0.dodge)
+      if (isReeling) {
+        m = Math.ceil(m / 2)
+        d = Math.ceil(d / 2)
+      } 
+      if (isTired) {
+        m = Math.ceil(m / 2)
+        d = Math.ceil(d / 2)
+      } 
       for (let enckey in encs) {
         let enc = encs[enckey];
-        if (enc.current) {
-          this.data.data.currentmove = parseInt(enc.move)
-          this.data.data.currentdodge = parseInt(enc.dodge)
+        enc.currentmove = Math.max(1, m - parseInt(enc.level))
+        enc.currentdodge = Math.max(1, d - parseInt(enc.level))
+        if (enc.current) {  // Save the global move/dodge
+          this.data.data.currentmove = enc.currentmove
+          this.data.data.currentdodge = enc.currentdodge
         }
       }
     }
     if (!this.data.data.equippedparry) this.data.data.equippedparry = this.getEquippedParry()
     if (!this.data.data.equippedblock) this.data.data.equippedblock = this.getEquippedBlock() 
   }
+  
+  /* Uncomment to see all of the data being 'updated' to this actor  DEBUGGING
+  async update(data, options) {
+    console.log(this.name + " UPDATE: "+ GURPS.objToString(data))
+    await super.update(data, options)
+  } 
+  // */
     
   /** @override */
   _onUpdate(data, options, userId, context) {
+    //console.log(this.name + " _onUPDATE: "+ GURPS.objToString(data))
     super._onUpdate(data, options, userId, context)
     game.GURPS.ModifierBucket.refresh() // Update the bucket, in case the actor's status effects have changed
+    if (game.settings.get(settings.SYSTEM_NAME, settings.SETTING_AUTOMATIC_ONETHIRD)) {
+      if (!isNaN(data.data?.HP?.value)) {
+        let flag = data.data.HP.value < (this.data.data.HP.max / 3)
+        if ((!!this.data.data.additionalresources.isReeling) != flag) this.changeOneThirdStatus('isReeling', flag)
+      }
+      if (!isNaN(data.data?.FP?.value)) {
+        let flag = data.data.FP.value < (this.data.data.FP.max / 3)
+        if ((!!this.data.data.additionalresources.isTired) != flag) this.changeOneThirdStatus('isTired', flag)
+      }
+    }
   }
 
   get _additionalResources() {
@@ -50,7 +85,7 @@ export class GurpsActor extends Actor {
   // First attempt at import GCS FG XML export data.
   async importFromGCSv1(xml, importname, importpath) {
     const GCAVersion = "GCA-7"
-    const GCSVersion = "GCS-3"
+    const GCSVersion = "GCS-4"
     var c, ra // The character json, release attributes
     let isFoundryGCS = false
     let isFoundryGCA = false
@@ -131,6 +166,10 @@ export class GurpsActor extends Actor {
           msg +=
             "This file was created with an older version of the GCS Export which does not contain the Self Control rolls for Disadvantages (ex: [CR: 9 Bad Temper]).<br>"
         }
+        if (vernum < 4) {
+          msg +=
+            "This file was created with an older version of the GCS Export which does not contain the 'Uses' column for Equipment.<br>"
+        }
       }
     }
     if (!!msg) {
@@ -196,20 +235,34 @@ export class GurpsActor extends Actor {
         whisper: [game.user._id],
       }
       CONFIG.ChatMessage.entityClass.create(chatData, {})
+      // Don't return, because we want to see how much actually gets committed.
     }
     console.log('Starting commit')
 
     let deletes = Object.fromEntries(Object.entries(commit).filter(([key, value]) => key.includes('.-=')))
     let adds = Object.fromEntries(Object.entries(commit).filter(([key, value]) => !key.includes('.-=')))
 
-    await this.update(deletes)
-    await this.update(adds)
-    
-    // This has to be done after all of the equipment is loaded
-    this.calculateDerivedValues()
-
-    console.log('Done importing.  You can inspect the character data below:')
-    console.log(this)
+    try {
+      await this.update(deletes)
+      this.update(adds).then(() => {
+        // This has to be done after everything is loaded
+        this.calculateDerivedValues()
+       console.log('Done importing.  You can inspect the character data below:')
+       console.log(this)
+     })
+    } catch (err) {
+      let msg = 'An error occured while importing ' + nm + ', ' + err.name + ':' + err.message
+      if (err.message == "Maximum depth exceeded")
+        msg = "You have too many levels of containers.  The Foundry import only supports up to 3 levels of sub-containers"
+      ui.notifications.warn(msg)
+      let chatData = {
+        user: game.user._id,
+        type: CONST.CHAT_MESSAGE_TYPES.WHISPER,
+        content: msg,
+        whisper: [game.user._id],
+      }
+      CONFIG.ChatMessage.entityClass.create(chatData, {})
+    }
   }
 
   // hack to get to private text element created by xml->json method.
@@ -545,6 +598,8 @@ export class GurpsActor extends Actor {
         eqt.techlevel = t(j.tl)
         eqt.legalityclass = t(j.lc)
         eqt.categories = t(j.type)
+        eqt.uses = t(j.uses)
+        eqt.maxuses = t(j.maxuses)
         eqt.uuid = t(j.uuid)
         eqt.parentuuid = t(j.parentuuid)
         if (isFoundryGCS) {
@@ -1034,7 +1089,10 @@ export class GurpsActor extends Actor {
   // --- Functions to handle events on actor ---
 
   handleDamageDrop(damageData) {
-    new ApplyDamageDialog(this, damageData).render(true)
+    if (game.user.isGM || game.settings.get(settings.SYSTEM_NAME, settings.SETTING_ONLY_GMS_OPEN_ADD)) 
+      new ApplyDamageDialog(this, damageData).render(true)
+    else
+      ui.notifications.warn("Only GMs are allowed to Apply Damage.");
   }
 
   // This function merges the 'where' and 'dr' properties of this actor's hitlocations
@@ -1120,6 +1178,93 @@ export class GurpsActor extends Actor {
 
   getEquippedBlock() {
     return this.getEquipped('block')
+  }
+  
+  changeOneThirdStatus(option, flag) {
+    this.update({ [`data.additionalresources.${option}`]: flag }).then(() => {
+      this.calculateDerivedValues()
+      let msg = this.name + " "
+      if (option === 'isReeling') {
+        if (flag) msg += 'is Reeling. Move and Dodge are halved. [PDF:B419]'
+        else msg += 'is no longer reeling.'
+      }
+      if (option === 'isTired') {
+        if (flag) msg += 'is Tired.   Move, Dodge and ST are halved. [PDF:B426]'
+        else msg += 'is no longer tired.'
+      }
+      let users = this.getUsers(CONST.ENTITY_PERMISSIONS.OWNER, true)
+      let ids = users.map(it => it._id)
+      let messageData = {
+        content: msg,
+        whisper: ids,
+        type: CONST.CHAT_MESSAGE_TYPES.WHISPER
+      }
+      ChatMessage.create(messageData)
+      ui.combat.render()
+    })
+  }
+  
+  findEquipmentByName(pattern) {
+    pattern = '^' + pattern.split('*').join('.*').replace(/\(/g, '\\(').replace(/\)/g, '\\)')
+    var eqt, key
+    recurselist(this.data.data.equipment.carried, (e, k) => {
+      if (!eqt && e.name.match(pattern)) {
+        eqt = e
+        key = k
+      }
+    }, 'data.equipment.carried.' )
+    recurselist(this.data.data.equipment.other, (e, k) => {
+      if (!eqt && e.name.match(pattern)) {
+        eqt = e
+        key = k
+      }
+    }, 'data.equipment.other.' )
+    return [eqt, key]
+  }
+  
+  async updateParentOf(srckey, pindex = 4) {
+    // pindex = 4 for equipment, 3 for everything else.
+    let sp = srckey.split('.').slice(0, pindex).join('.')
+    if (sp != srckey) {
+      let eqt = GURPS.decode(this.data, sp)
+      await Equipment.calcUpdate(this, eqt, sp)
+    }
+  }
+  
+  checkEncumbance(currentWeight) {
+    let encs = this.data.data.encumbrance
+    var best, prev, last
+    for (let key in encs) {
+      let enc = encs[key]
+      if (enc.current) prev = key
+      let w = parseFloat(enc.weight)
+      if (w > 0) {
+        last = key
+        if (currentWeight <= w) {
+          best = key
+          break
+        }
+      }
+    }
+    if (!best && !!last) best = last
+    if (best != prev) {
+      setTimeout(async () => {
+        for (let key in encs) {
+          let enc = encs[key]
+          let t = 'data.encumbrance.' + key + '.current'
+          if (enc.current) {
+            await this.update({ [t]: false })
+          }
+          if (key === best) {
+            await this.update({
+              [t]: true,
+              'data.currentmove': parseInt(enc.currentmove),
+              'data.currentdodge': parseInt(enc.currentdodge),
+            })
+          }
+        }
+      }, 200)
+    }
   }
 
 }
@@ -1263,6 +1408,8 @@ export class Equipment extends Named {
   categories = ''
   costsum = ''
   weightsum = ''
+  uses = ''
+  maxuses = ''
 
   static calc(eqt) {
     Equipment.calcUpdate(null, eqt, '')

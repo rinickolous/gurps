@@ -40,6 +40,7 @@ export default class ApplyDamageDialog extends Application {
     this._calculator = new CompositeDamageCalculator(actor, damageData)
     this.actor = actor
     this.isSimpleDialog = game.settings.get(settings.SYSTEM_NAME, settings.SETTING_SIMPLE_DAMAGE)
+    this.timesToApply = 1
   }
 
   static get defaultOptions() {
@@ -61,6 +62,7 @@ export default class ApplyDamageDialog extends Application {
     let data = super.getData()
     data.actor = this.actor
     data.CALC = this._calculator
+    data.timesToApply = this.timesToApply
     data.isSimpleDialog = this.isSimpleDialog
     return data
   }
@@ -112,8 +114,32 @@ export default class ApplyDamageDialog extends Application {
       .find('#basicDamage')
       .on('change', ev => this._updateModelFromInputText($(ev.currentTarget), 'basicDamage', parseIntFrom))
 
-    html.find('#apply-publicly').on('click', ev => this.submitDirectApply(ev, true))
-    html.find('#apply-secretly').on('click', ev => this.submitDirectApply(ev, false))
+    html.find('#apply-publicly').on('click', ev => {
+      this.submitDirectApply(ev.shiftKey, true)
+    })
+
+    html.find('#apply-secretly').on('click', ev => {
+      let content = html.find('#apply-dropdown')
+      this._toggleVisibility(content, content.hasClass('invisible'))
+      this.submitDirectApply(ev.shiftKey, false)
+    })
+
+    html.find('#apply-keep').on('click', ev => {
+      let content = html.find('#apply-dropdown')
+      this._toggleVisibility(content, content.hasClass('invisible'))
+      this.submitDirectApply(true, true)
+    })
+
+    html.find('#apply-secretly-keep').on('click', ev => {
+      let content = html.find('#apply-dropdown')
+      this._toggleVisibility(content, content.hasClass('invisible'))
+      this.submitDirectApply(true, false)
+    })
+
+    html.find('#apply-split').on('click', ev => {
+      let content = html.find('#apply-dropdown')
+      this._toggleVisibility(content, content.hasClass('invisible'))
+    })
 
     // Set Apply To dropdown value.
     // When dropdown changes, update the calculator and refresh GUI.
@@ -127,6 +153,12 @@ export default class ApplyDamageDialog extends Application {
     html
       .find('#user-entered-dr')
       .on('change', ev => this._updateModelFromInputText($(ev.currentTarget), 'userEnteredDR', parseIntFrom))
+
+    html.find('#apply-multiple').on('change', ev => {
+      let temp = $(ev.currentTarget).val()
+      temp = parseIntFrom(temp, 1)
+      this.timesToApply = temp
+    })
 
     // If the current hit location is Random, resolve the die roll and update the hit location.
     if (this._calculator.hitLocation === 'Random') this._randomizeHitLocation()
@@ -234,11 +266,43 @@ export default class ApplyDamageDialog extends Application {
       this.updateUI()
     })
 
+    html.find('#shotgun-damage').click(ev => this._updateModelFromBooleanElement($(ev.currentTarget), 'isShotgun'))
+
+    html.find('#shotgun-rof-multiplier').on('change', ev => {
+      let currentValue = $(ev.currentTarget).val()
+      this._calculator.shotgunRofMultiplier = currentValue === '' || currentValue === '0' ? 1 : parseInt(currentValue)
+      this.updateUI()
+    })
+
     // ==== Results ====
     html.find('#result-effects button').click(async ev => this._handleEffectButtonClick(ev))
 
-    html.find('#apply-injury-publicly').click(ev => this.submitInjuryApply(ev, true))
-    html.find('#apply-injury-secretly').click(ev => this.submitInjuryApply(ev, false))
+    html.find('#apply-injury-split').on('click', ev => {
+      let content = html.find('#apply-injury-dropdown')
+      this._toggleVisibility(content, content.hasClass('invisible'))
+    })
+
+    html.find('#apply-injury-publicly').click(ev => {
+      this.submitInjuryApply(ev, ev.shiftKey, true)
+    })
+
+    html.find('#apply-injury-secretly').on('click', ev => {
+      let content = html.find('#apply-injury-dropdown')
+      this._toggleVisibility(content, content.hasClass('invisible'))
+      this.submitInjuryApply(ev, ev.shiftKey, false)
+    })
+
+    html.find('#apply-injury-keep').on('click', ev => {
+      let content = html.find('#apply-injury-dropdown')
+      this._toggleVisibility(content, content.hasClass('invisible'))
+      this.submitInjuryApply(ev, true, true)
+    })
+
+    html.find('#apply-injury-secretly-keep').on('click', ev => {
+      let content = html.find('#apply-injury-dropdown')
+      this._toggleVisibility(content, content.hasClass('invisible'))
+      this.submitInjuryApply(ev, true, false)
+    })
   }
 
   /**
@@ -378,33 +442,37 @@ export default class ApplyDamageDialog extends Application {
    * Handle clicking on the Apply (Publicly or Secretly) buttons.
    * @param {boolean} publicly - if true, display to everyone; else display to GM and owner.
    */
-  submitDirectApply(ev, publicly) {
+  submitDirectApply(keepOpen, publicly) {
     let injury = this._calculator.basicDamage
     let type = this._calculator.applyTo
-    this.resolveInjury(ev, injury, type, publicly)
+    this.resolveInjury(keepOpen, injury, type, publicly)
   }
 
   /**
    * Handle clicking on the Apply Injury (public or secret) buttons.
    * @param {boolean} publicly - if true, display to everyone; else display to GM and owner.
    */
-  submitInjuryApply(ev, publicly) {
+  async submitInjuryApply(ev, keepOpen, publicly) {
     let injury = this._calculator.pointsToApply
     let type = this.damageType === 'fat' ? 'FP' : 'HP'
 
     let dialog = $(ev.currentTarget).parents('.gurps-app')
     let results = $(dialog).find('.results-table')
     let clone = results.clone().html()
-    this.resolveInjury(ev, injury, type, publicly, clone)
+
+    for (let index = 0; index < this.timesToApply; index++) {
+      await this.resolveInjury(keepOpen, injury, type, publicly, clone)
+    }
   }
 
   /**
    * Handle the actual loss of HP or FP on the actor and display the results in the chat.
-   * @param {*} injury
-   * @param {*} type
+   * @param {boolean} keepOpen - if true, apply the damage and keep this window open.
+   * @param {int} injury
+   * @param {String} type - either 'FP' or 'HP'
    * @param {boolean} publicly - if true, display to everyone; else display to GM and owner.
    */
-  resolveInjury(ev, injury, type, publicly, results = null) {
+  async resolveInjury(keepOpen, injury, type, publicly, results = null) {
     let current = type === 'FP' ? this._calculator.FP.value : this._calculator.HP.value
 
     let attackingActor = game.actors.get(this._calculator.attacker)
@@ -420,9 +488,9 @@ export default class ApplyDamageDialog extends Application {
     }
 
     if (type === 'FP') {
-      this.actor.update({ 'data.FP.value': this._calculator.FP.value - injury })
+      await this.actor.update({ 'data.FP.value': this.actor.data.data.FP.value - injury })
     } else {
-      this.actor.update({ 'data.HP.value': this._calculator.HP.value - injury })
+      await this.actor.update({ 'data.HP.value': this.actor.data.data.HP.value - injury })
     }
 
     this._renderTemplate('chat-damage-results.html', data).then(html => {
@@ -451,7 +519,7 @@ export default class ApplyDamageDialog extends Application {
       }
 
       CONFIG.ChatMessage.entityClass.create(messageData)
-      if (!ev.shiftKey) this.close()
+      if (!keepOpen) this.close()
     })
   }
 }

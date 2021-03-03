@@ -14,7 +14,7 @@ import {
 import { ModifierBucket } from './modifiers.js'
 import { ChangeLogWindow } from '../lib/change-log.js'
 import { SemanticVersion } from '../lib/semver.js'
-import { d6ify, recurselist, getAllActorsInActiveScene } from '../lib/utilities.js'
+import { d6ify, recurselist, getAllActorsInActiveScene, atou, utoa } from '../lib/utilities.js'
 import { ThreeD6 } from '../lib/threed6.js'
 import { doRoll } from '../module/dierolls/dieroll.js'
 
@@ -775,7 +775,7 @@ function cleanUpP(xml) {
       if (e > s) {
         let t1 = xml.substring(0, s)
         let t2 = xml.substring(s + 3, e)
-        t2 = '@@@@' + btoa(t2) + '\n'
+        t2 = '@@@@' + utoa(t2) + '\n'
         let t3 = xml.substr(e + 4)
         xml = t1 + t2 + t3
         s = xml.indexOf(tagin, s + t2.length)
@@ -921,9 +921,10 @@ async function performAction(action, actor, event, targets) {
 
   let processLinked = tempAction => {
     let bestLvl = 0
-    var bestAction
+    var bestAction, besttrue
     let attempts = []
     while (!!tempAction) {
+      if (!!tempAction.truetext && !besttrue) besttrue = tempAction
       if (tempAction.type == 'attribute') {
         let t = parseInt(action.target)
         if (!t) t = parseInt(this.resolve(tempAction.path, actordata.data))
@@ -935,24 +936,53 @@ async function performAction(action, actor, event, targets) {
           thing = this.i18n(tempAction.path)
           prefix = 'Roll vs '
           target = t
+          if (!!tempAction.truetext) besttrue = tempAction
         }
       } else {
         // skill
         let skill = GURPS.findSkillSpell(actordata, tempAction.name)
-        if (!skill) attempts.push(tempAction.name)
-        else {
-          let sl = parseInt(skill.level)
-          if (!!tempAction.mod) sl += parseInt(tempAction.mod)
-          if (sl > bestLvl) {
-            bestLvl = parseInt(sl)
+
+        if (!skill) {
+          attempts.push(tempAction.name)
+        } else {
+          // on a normal skill check, look for the skill with the highest level
+          let getLevel = skill => parseInt(skill.level)
+
+          let getSkillName = skill => skill.name
+
+          // on a floating skill check, we want the skill with the highest relative skill level
+          if (!!tempAction.floatingAttribute) {
+            getSkillName = skill => `${tempAction.floatingLabel}-based ${skill.name}`
+
+            let value = this.resolve(tempAction.floatingAttribute, actordata.data)
+            getLevel = skill => {
+              let rsl = skill.relativelevel //  this is something like 'IQ-2' or 'Touch+3'
+              console.log(rsl)
+              let valueText = rsl.replace(/^.*([+-]\d+)$/g, '$1')
+              console.log(valueText)
+              return valueText === rsl ? 0 : parseInt(valueText) + parseInt(value)
+            }
+          }
+
+          let skillLevel = getLevel(skill)
+
+          if (!!tempAction.mod) skillLevel += parseInt(tempAction.mod)
+
+          if (skillLevel > bestLvl) {
+            bestLvl = skillLevel
             bestAction = tempAction
-            thing = skill.name
-            target = parseInt(skill.level) // target is without mods
+            thing = getSkillName(skill)
+            target = getLevel(skill) // target is without mods
             prefix = ''
+            if (!!tempAction.truetext) besttrue = tempAction
           }
         }
       }
       tempAction = tempAction.next
+    }
+    if (!!bestAction && !!besttrue) {
+      bestAction.truetext = besttrue.truetext
+      bestAction.falsetext = besttrue.falsetext
     }
     return [bestAction, attempts]
   }
@@ -967,6 +997,7 @@ async function performAction(action, actor, event, targets) {
         return false
       }
       formula = '3d6'
+      opt.action = bestAction
       if (!!bestAction.mod) targetmods.push(GURPS.ModifierBucket.makeModifier(bestAction.mod, bestAction.desc))
       else if (!!bestAction.desc) opt.text = "<span style='font-size:85%'>(" + bestAction.desc + ')</span>'
     } else ui.notifications.warn('You must have a character selected')
@@ -1159,7 +1190,7 @@ function gurpslink(str, clrdmods = true) {
       output += action.text
       if (!action.action) output += ']'
       str = str.substr(i + 1)
-      i = 0
+      i = -1
       found = -1
     }
   }
@@ -1242,7 +1273,7 @@ function handleGurpslink(event, actor, desc, targets) {
   event.preventDefault()
   let element = event.currentTarget
   let action = element.dataset.action // If we have already parsed
-  if (!!action) action = JSON.parse(atob(action))
+  if (!!action) action = JSON.parse(atou(action))
   else action = parselink(element.innerText, desc).action
   this.performAction(action, actor, event, targets)
 }
@@ -1414,15 +1445,15 @@ GURPS.initiative = new Initiative()
 GURPS.hitpoints = new HitFatPoints()
 GURPS.damageChat = new DamageChat(GURPS)
 
-// Modifier Bucket must be defined after hit locations
-GURPS.ModifierBucket = new ModifierBucket({
-  popOut: false,
-  minimizable: false,
-  resizable: false,
-  id: 'ModifierBucket',
-  template: 'systems/gurps/templates/modifier-bucket.html',
-  classes: [],
-})
+// // Modifier Bucket must be defined after hit locations
+// GURPS.ModifierBucket = new ModifierBucket({
+//   popOut: false,
+//   minimizable: false,
+//   resizable: false,
+//   id: 'ModifierBucket',
+//   template: 'systems/gurps/templates/modifier-bucket.html',
+//   classes: [],
+// })
 
 GURPS.ThreeD6 = new ThreeD6({
   popOut: false,
@@ -1441,7 +1472,7 @@ GURPS.onRightClickGurpslink = function (event) {
   let el = event.currentTarget
   let action = el.dataset.action
   if (!!action) {
-    action = JSON.parse(window.atob(action))
+    action = JSON.parse(window.atou(action))
     if (action.type === 'damage' || action.type === 'deriveddamage')
       GURPS.resolveDamageRoll(event, GURPS.LastActor, action.orig, game.user.isGM, true)
     else GURPS.whisperOtfToOwner(action.orig, event, action, GURPS.LastActor) // only offer blind rolls for things that can be blind, No need to offer blind roll if it is already blind
@@ -1599,6 +1630,16 @@ Hooks.once('init', async function () {
   if (game.i18n.lang == 'pt_br') src = 'systems/gurps/icons/gurps4e-pt_br.png'
   $('#logo').attr('src', src)
 
+  // Modifier Bucket must be defined after hit locations
+  GURPS.ModifierBucket = new ModifierBucket({
+    popOut: false,
+    minimizable: false,
+    resizable: false,
+    id: 'ModifierBucket',
+    template: 'systems/gurps/templates/modifier-bucket.html',
+    classes: [],
+  })
+
   // Define custom Entity classes
   CONFIG.Actor.entityClass = GurpsActor
   CONFIG.Item.entityClass = GurpsItem
@@ -1683,9 +1724,39 @@ Hooks.once('ready', async function () {
   Hooks.on('renderCombatTracker', function (a, html, c) {
     // use class 'bound' to know if the drop event is already bound
     if (!html.hasClass('bound')) {
+      if (game.user.isGM) {
+        let cc = html.find('.combatant-controls')
+        cc.prepend(
+          '<a class="combatant-control" title="<1/3 FP" data-onethird="isTired"><i class="fas fa-heartbeat"></i></a>'
+        )
+        cc.prepend(
+          '<a class="combatant-control" title="<1/3 HP" data-onethird="isReeling"><i class="fas fa-heart-broken"></i></a>'
+        )
+  
+        let t = html.find('[data-onethird]')
+        for (let i = 0; i < t.length; i++) {
+          let el = t[i]
+          let combatant = $(el).parents('.combatant').attr('data-combatant-id')
+          let target = game.combat.combatants.filter(c => c._id === combatant)[0]
+          if (!!target.actor.data.data.additionalresources[$(el).attr('data-onethird')]) $(el).addClass('active')
+        }
+  
+        html.find('[data-onethird]').click(ev => {
+          let el = ev.currentTarget
+          let flag = false
+          if ($(el).hasClass('active')) $(el).removeClass('active')
+          else {
+            $(el).addClass('active')
+            flag = true
+          }
+          let combatant = $(el).parents('.combatant').attr('data-combatant-id')
+          let target = game.combat.combatants.filter(c => c._id === combatant)[0]
+          target.actor.changeOneThirdStatus($(el).attr('data-onethird'), flag)
+        })
+      }
       html.addClass('bound')
       html.on('drop', function (ev) {
-        console.log('Haandle drop event on combatTracker')
+        console.log('Handle drop event on combatTracker')
         ev.preventDefault()
         ev.stopPropagation()
         let elementMouseIsOver = document.elementFromPoint(ev.clientX, ev.clientY)
