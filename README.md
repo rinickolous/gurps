@@ -1,6 +1,6 @@
 ### Users Guide for [GURPS 4e game aid for Foundry VTT](https://bit.ly/2JaSlQd)
 
-# Current Release Version 0.8.15
+# Current Release Version 0.8.17
 
 [If you like our work...](https://ko-fi.com/crnormand)
 
@@ -17,14 +17,28 @@ Join us on Discord: [GURPS Foundry-VTT Discord](https://discord.gg/6xJBcYWyED)
 
 ### If you are looking for the latest stable release, use the manifest URL above.
 
-[Current GCA Export version: 'GCA-7' 2/18/2021 / Current GCS Export version: 'GCS-4' 2/23/2021](https://drive.google.com/file/d/1vbDb9WtYQiZI78Pwa_TlEvYpJnR_S67B/view?usp=sharing)
+[Current GCA Export version: 'GCA-7' 2/18/2021 / Current GCS Export version: 'GCS-5' 3/8/2021](https://drive.google.com/file/d/1vbDb9WtYQiZI78Pwa_TlEvYpJnR_S67B/view?usp=sharing)
 
 This is what we are currently working on:
 
-0.8.16
+0.9.0
+  - Items... yes... actual items.
+  
+## History
+
+0.8.17 - 3/8/2021
+  - Bug fix for names/names containing '%'
+  - Bug fix for resource tracker mis-alignment (due to arrow)
+  - Bug fix for missing hitlocation internationalization
+  - Bug fixes for Navigation buttons
+  - Bug fix for ADD Shotgun DR
+  - Bug fix for GCS import individual melee and ranged notes
+  - /hp /fp now support dice roll /hp +1d
+
+0.8.16 - 3/6/2021
 
   - Bug fix for GCA exports. Now equipment with melee & ranged attacks appear in both (Spears)
-  - Big fix for GCA exports (with Armin's help!) Block is calculated correctly for items with DB (shields)
+  - Bug fix for GCA exports (with Armin's help!) Block is calculated correctly for items with DB (shields)
   - Add doubleclick edit to NPC Sheet Notes, Melee, Ranged, Ads, Skill and Spells list
   - Bug fix for limb, extremity, and eye crippling calculation. Originally the calculation was taking "crippling" as 1/2 HP or 1/3 HP exactly, but the RAW say it should be *over* that threshold. Example: 10 HP character is hit in the arm with 8 points of damage; the arm is crippled if it takes *more than* 5 points of damage (i.e., 6).
   - High rate of fire weapons damage is supported directly. Right-click on a damage roll to get a menu to enter the number of hits. There will be a new "ALL THE DAMAGE" draggable section of the damage chat message. Dragging that onto a character will apply all damage rolls in the ADD. The ADD has been enhanced to allow each damage calculation to be displayed, while applying the total.
@@ -39,14 +53,14 @@ This is what we are currently working on:
   - Add "Apply Damage to <Target>" button to Damage Chat Message. If the user who rolled the damage also has set a target, this adds the button only for the GM.
   - Better parsing of On-the-Fly formulas in Journal entries (especially unicode characters)
   - Restrict Apply Damage Calculator to GM only (system setting)
-  - Updated /sendmb to allow optional OtF modifier: /sendmb [+1 to hit & +3 luck] &lt;playername(s)>
+  - Updated /sendmb to allow optional OtF modifier: /sendmb [+1 to hit & +3 luck] <playername(s)>
   - Allow OtF skill check to use a different attribute than the default. (E.g., make a Per-based Traps skill check at -2 for difficulty: "[S:Traps -2 difficulty (Based:Per)]".)
   - Allow conditional text for Attribute and Skill checks [!Per ?"You sense something is there", "You hear nothing!"]
   - Bug fix for old chat messages.  Can now be clicked on
   - Added /hp /fp /qty /trackerN chat commands
   - Added /qty /uses /status /tracker(name) chat commands
+  - Added .ra /sendmbs multiline chat msgs \\
 
-## History
 
 0.8.15 - 2/17/2021
 
