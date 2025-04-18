@@ -110,6 +110,8 @@ const characterSchema = {
 	reactions: new MappingField(new fields.EmbeddedDataField(LegacyReaction)),
 	additionalresources: new fields.SchemaField({
 		bodyplan: new fields.StringField({ required: true, nullable: false }),
+		importname: new fields.StringField({ required: true, nullable: false }),
+		importpath: new fields.FilePathField({ required: true, nullable: false }),
 		tracker: new MappingField(new fields.EmbeddedDataField(LegacyTracker)),
 	}),
 	conditions: new MappingField(new fields.EmbeddedDataField(LegacyCondition)),
