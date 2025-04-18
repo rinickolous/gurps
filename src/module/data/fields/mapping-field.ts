@@ -1,121 +1,294 @@
 import { AnyObject, SimpleMerge } from 'fvtt-types/utils'
 import fields = foundry.data.fields
 
-fields.ArrayField
+declare namespace MappingField {
+  /**
+   * A shorthand for the options of an MappingField class.
+   * @typeParam AssignmentElementType - the assignment type of the elements in the record
+   */
+  type Options<AssignmentElementType> = fields.DataField.Options<BaseAssignmentType<AssignmentElementType>> & {
+    initialKeys: string[] | null
+    initialValue?: AssignmentElementType | null
+    initialKeysOnly?: boolean
+  }
 
-namespace MappingField {
-  export type ElementFieldType = fields.DataField.Any
+  type AnyOptions = Options<unknown>
 
-  export type Options<_ElementFieldType> = fields.DataField.Options<_ElementFieldType>
+  /* -------------------------------------------- */
 
-  export type AnyOptions = Options<any>
+  /**
+   * @typeParam AssignmentElementType - the assignment type of the elements in the array
+   */
+  type BaseAssignmentType<AssignmentElementType> = Record<string | number, AssignmentElementType>
+  // | Iterable<AssignmentElementType>
+  // | AssignmentElementType[]
+  // | AssignmentElementType
 
-  export type DefaultOptions<_ElementFieldType extends ElementFieldType> = fields.ObjectField.DefaultOptions
+  /* -------------------------------------------- */
 
-  export type MergedOptions<_ElementFieldType extends ElementFieldType, _Options extends AnyOptions> = SimpleMerge<
-    DefaultOptions<_ElementFieldType>,
+  /**
+   * The type of the default options for the {@link ArrayField | `ArrayField`} class.
+   * @typeParam AssignmentElementType - the assignment type of the elements in the array
+   */
+  type DefaultOptions<AssignmentElementType> = SimpleMerge<
+    fields.DataField.DefaultOptions,
+    {
+      required: true
+      nullable: false
+      initial: () => Record<string | number, AssignmentElementType>
+      initialKeys: string[] | null
+      initialValue: AssignmentElementType | null
+      initialKeysOnly: boolean
+    }
+  >
+
+  /* -------------------------------------------- */
+
+  /**
+   * A helper type for the given options type merged into the default options of the ArrayField class.
+   * @typeParam AssignmentElementType - the assignment type of the elements of the ArrayField
+   * @typeParam _Options                  - the options that override the default options
+   */
+  type MergedOptions<AssignmentElementType, _Options extends AnyOptions> = SimpleMerge<
+    DefaultOptions<AssignmentElementType>,
     _Options
   >
 
   /* -------------------------------------------- */
 
-  // export type BaseAssignmentType<_ElementFieldType extends ElementFieldType> = Record<
-  //   number | string,
-  //   fields.DataField.AssignmentType<_ElementFieldType>
-  // >
+  /**
+   * A type to infer the assignment element type of an ArrayField from its ElementFieldType.
+   * @typeParam ElementFieldType - the DataField type of the elements in the ArrayField
+   */
+  type AssignmentElementType<ElementFieldType extends fields.DataField.Any> =
+    ElementFieldType extends fields.DataField<infer _1, infer Assign, infer _2, infer _3>
+      ? Assign
+      : // : ElementFieldType extends abstract new (
+        //       ...args: infer _1
+        //     ) => foundry.abstract.DataModel<infer Schema, infer _2, infer _3>
+        //   ? fields.SchemaField.AssignmentData<Schema>
+        never
 
   /* -------------------------------------------- */
 
-  export type AssignmentTypeElementType<_ElementFieldType extends ElementFieldType> =
-    _ElementFieldType extends fields.DataField<any, infer Assign, any, any> ? Assign : never
+  /**
+   * A type to infer the initialized element type of an ArrayField from its ElementFieldType.
+   * @typeParam ElementFieldType - the DataField type of the elements in the ArrayField
+   */
+  type InitializedElementType<ElementFieldType extends fields.DataField.Any> =
+    ElementFieldType extends fields.DataField<infer _1, infer _2, infer Init, infer _3>
+      ? Init
+      : // : ElementFieldType extends abstract new (
+        //       ...args: infer _4
+        //     ) => foundry.abstract.DataModel<infer Schema, infer _5, infer _6>
+        //   ? fields.SchemaField.InitializedData<Schema>
+        never
 
-  export type AssignmentType<
-    _ElementFieldType extends ElementFieldType,
-    _Options extends Options<_ElementFieldType>,
-  > = fields.DataField.DerivedAssignmentType<
-    Record<string | number, fields.DataField.AssignmentType<_ElementFieldType>>,
-    MergedOptions<_ElementFieldType, _Options>
+  /* -------------------------------------------- */
+
+  /**
+   * A type to infer the initialized element type of an ArrayField from its ElementFieldType.
+   * @typeParam ElementFieldType - the DataField type of the elements in the ArrayField
+   */
+  type PersistedElementType<ElementFieldType extends fields.DataField.Any> =
+    ElementFieldType extends fields.DataField<infer _1, infer _2, infer _3, infer Persist>
+      ? Persist
+      : // : ElementFieldType extends abstract new (
+        //       ...args: infer _4
+        //     ) => foundry.abstract.DataModel<infer Schema, infer _5, infer _6>
+        //   ? fields.SchemaField.SourceData<Schema>
+        never
+
+  /* -------------------------------------------- */
+
+  /**
+   * A shorthand for the assignment type of an ArrayField class.
+   * @typeParam AssignmentElementType - the assignment type of the elements of the ArrayField
+   * @typeParam Opts                  - the options that override the default options
+   */
+  type AssignmentType<AssignmentElementType, Opts extends AnyOptions> = fields.DataField.DerivedAssignmentType<
+    BaseAssignmentType<AssignmentElementType>,
+    MergedOptions<AssignmentElementType, Opts>
   >
 
   /* -------------------------------------------- */
 
-  export type InitialilzedTypeElementType<_ElementFieldType extends ElementFieldType> =
-    _ElementFieldType extends fields.DataField<any, any, infer Init, any> ? Init : never
-
-  export type InitializedType<
-    _ElementFieldType extends ElementFieldType,
-    _Options extends Options<_ElementFieldType>,
+  /**
+   * A shorthand for the initialized type of an ArrayField class.
+   * @typeParam AssignmentElementType  - the assignment type of the elements of the ArrayField
+   * @typeParam InitializedElementType - the initialized type of the elements of the ArrayField
+   * @typeParam Opts                   - the options that override the default options
+   */
+  type InitializedType<
+    AssignmentElementType,
+    InitializedElementType,
+    Opts extends AnyOptions,
   > = fields.DataField.DerivedInitializedType<
-    Record<string | number, fields.DataField.InitializedType<_ElementFieldType>>,
-    MergedOptions<_ElementFieldType, _Options>
+    Record<string | number, InitializedElementType>,
+    MergedOptions<AssignmentElementType, Opts>
   >
 
   /* -------------------------------------------- */
 
-  export type PersistedElementType<_ElementFieldType extends ElementFieldType> =
-    _ElementFieldType extends fields.DataField<any, any, any, infer Persist> ? Persist : never
-
-  export type PersistedType<
-    _ElementFieldType extends ElementFieldType,
-    _Options extends Options<_ElementFieldType>,
+  /**
+   * A shorthand for the persisted type of an ArrayField class.
+   * @typeParam AssignmentElementType - the assignment type of the elements of the ArrayField
+   * @typeParam PersistedElementType  - the persisted type of the elements of the ArrayField
+   * @typeParam Opts                  - the options that override the default options
+   */
+  type PersistedType<
+    AssignmentElementType,
+    PersistedElementType,
+    Opts extends AnyOptions,
   > = fields.DataField.DerivedInitializedType<
-    Record<string | number, fields.DataField.PersistedTypeFor<_ElementFieldType>>,
-    MergedOptions<_ElementFieldType, _Options>
+    Record<string | number, PersistedElementType>,
+    MergedOptions<AssignmentElementType, Opts>
   >
 
   /* -------------------------------------------- */
+
+  type InitialValueBuilder = (key: string, initial: AnyObject, existing: AnyObject) => object
 }
+
+/* -------------------------------------------- */
 
 class MappingField<
   const ElementFieldType extends fields.DataField.Any,
   const Options extends MappingField.AnyOptions = MappingField.DefaultOptions<
-    MappingField.AssignmentTypeElementType<ElementFieldType>
+    MappingField.AssignmentElementType<ElementFieldType>
   >,
-  const AssignmentType = MappingField.AssignmentType<ElementFieldType, Options>,
-  const InitializedType = MappingField.InitializedType<ElementFieldType, Options>,
+  const AssignmentElementType = MappingField.AssignmentElementType<ElementFieldType>,
+  const InitializedElementType = MappingField.InitializedElementType<ElementFieldType>,
+  const AssignmentType = MappingField.AssignmentType<AssignmentElementType, Options>,
+  const InitializedType = MappingField.InitializedType<AssignmentElementType, InitializedElementType, Options>,
+  const PersistedElementType = MappingField.PersistedElementType<ElementFieldType>,
   const PersistedType extends
-    | Record<string | number, MappingField.PersistedElementType<ElementFieldType>>
+    | Record<string | number, PersistedElementType>
     | null
-    | undefined = MappingField.PersistedType<ElementFieldType, Options>,
+    | undefined = MappingField.PersistedType<AssignmentElementType, PersistedElementType, Options>,
 > extends fields.ObjectField<Options, AssignmentType, InitializedType, PersistedType> {
-  model: fields.DataField.Any
+  model: ElementFieldType
+  declare initialKeys: string[]
+  declare initialValue: MappingField.InitialValueBuilder
+  initialKeysOnly = false
 
   /* -------------------------------------------- */
 
   constructor(model: ElementFieldType, options?: Options) {
+    if (!(model instanceof foundry.data.fields.DataField)) {
+      throw new Error('MappingField must have a DataField as its contained element')
+    }
     super(options)
+
     this.model = model
+    model.parent = this
   }
-}
 
-// class TestField<Options extends MappingField.Options<AnyObject>> extends MappingField<
-//   fields.EmbeddedDataField<typeof TestModel2>,
-//   Options
-// > {
-//   constructor(options?: Options) {
-//     super(new fields.EmbeddedDataField(TestModel2), options)
-//   }
-// }
+  /* -------------------------------------------- */
 
-class TestModel extends foundry.abstract.DataModel<TestSchema> {
-  testFunc() {
-    Object.entries(this.test).forEach(([key, value]) => {
-      key
-      value
+  static override get _defaults(): MappingField.AnyOptions {
+    return foundry.utils.mergeObject(super._defaults, {
+      initialKeys: null,
+      initialValue: null,
+      initialKeysOnly: false,
     })
   }
+
+  /* -------------------------------------------- */
+
+  protected override _cleanType(value: InitializedType, options?: fields.DataField.CleanOptions): InitializedType {
+    Object.entries(value as AnyObject).forEach(([k, v]) => {
+      if (k.startsWith('-=')) return
+      ;(value as any)[k] = this.model.clean(v, options)
+    })
+    return value
+  }
+
+  /* -------------------------------------------- */
+
+  override getInitialValue(data: fields.DataField.CleanOptions['source']): InitializedType {
+    let keys = this.initialKeys
+    const initial = super.getInitialValue(data)
+    if (!keys || !foundry.utils.isEmpty(initial)) return initial
+    if (!(keys instanceof Array)) keys = Object.keys(keys)
+    for (const key of keys) (initial as any)[key] = this._getInitialValueForKey(key)
+    return initial
+  }
+
+  /* -------------------------------------------- */
+
+  /**
+   * Get the initial value for the provided key.
+   * @param {string} key       Key within the object being built.
+   * @param {object} [object]  Any existing mapping data.
+   * @returns {*}              Initial value based on provided field type.
+   */
+  _getInitialValueForKey(key: string, object?: AnyObject): object {
+    const initial = this.model.getInitialValue({})
+    return this.initialValue?.(key, initial, object ?? {}) ?? initial
+  }
+
+  /* -------------------------------------------- */
+
+  protected override _validateType(
+    value: InitializedType,
+    options?: fields.DataField.ValidationOptions<fields.DataField.Any>
+  ) {
+    if (foundry.utils.getType(value) !== 'Object') throw new Error('must be an Object')
+    const errors = this._validateValues(value, options)
+    if (!foundry.utils.isEmpty(errors)) {
+      const failure = new foundry.data.validation.DataModelValidationFailure({})
+      failure.elements = Object.entries(errors).map(([id, failure]) => ({ id, failure }))
+      throw failure.asError()
+    }
+  }
+
+  /* -------------------------------------------- */
+
+  /**
+   * Validate each value of the object.
+   */
+  _validateValues(
+    value: InitializedType,
+    options?: fields.DataField.ValidationOptions<fields.DataField.Any>
+  ): Record<string, foundry.data.validation.DataModelValidationFailure> {
+    const errors: Record<string, foundry.data.validation.DataModelValidationFailure> = {}
+    for (const [k, v] of Object.entries(value as object)) {
+      if (k.startsWith('-=')) continue
+      const error = this.model.validate(v, options)
+      if (error) errors[k] = error
+    }
+    return errors
+  }
+
+  /* -------------------------------------------- */
+
+  override initialize(
+    value: PersistedType,
+    model: foundry.abstract.DataModel.Any,
+    options?: AnyObject
+  ): (() => InitializedType | null) | InitializedType {
+    if (!value) return value as unknown as InitializedType
+
+    const obj: Record<string, unknown> = {}
+    const initialKeys = this.initialKeys instanceof Array ? this.initialKeys : Object.keys(this.initialKeys ?? {})
+    const keys = this.initialKeysOnly ? initialKeys : Object.keys(value)
+    for (const key of keys) {
+      const data = (value as Record<string, unknown>)[key] ?? this._getInitialValueForKey(key, value)
+      obj[key] = this.model.initialize(data, model, options)
+    }
+    return obj as unknown as InitializedType
+  }
+
+  /* -------------------------------------------- */
+
+  protected override _getField(path: string[]): unknown {
+    if (path.length === 0) return this
+    else if (path.length === 1) return this.model
+    path.shift()
+    // @ts-expect-error ignoring protected in this case
+    return this.model._getField(path)
+  }
 }
-
-class TestModel2 extends foundry.abstract.DataModel<TestSchema2> {}
-
-const testSchema = {
-  test: new MappingField<fields.EmbeddedDataField<typeof TestModel2>>(new fields.EmbeddedDataField(TestModel2)),
-}
-
-const testSchema2 = { foo: new fields.StringField() }
-
-type TestSchema = typeof testSchema
-
-type TestSchema2 = typeof testSchema2
 
 export { MappingField }

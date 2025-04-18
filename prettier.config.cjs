@@ -1,8 +1,34 @@
 module.exports = {
-  trailingComma: 'es5',
-  tabWidth: 2,
-  semi: false,
-  singleQuote: true,
-  printWidth: 120,
-  arrowParens: 'avoid',
+	trailingComma: "es5",
+	semi: false,
+	singleQuote: false,
+	printWidth: 120,
+	tabWidth: 4,
+	useTabs: true,
+	bracketSpacing: true,
+	endOfLine: "lf",
+	arrowParens: "avoid",
+	overrides: [
+		{
+			files: ["*.scss", "*.css"],
+			options: {
+				requirePragma: false,
+				parser: "scss",
+			},
+		},
+		{
+			files: ["*.yml"],
+			options: {
+				tabWidth: 2,
+			},
+		},
+		{
+			files: ["*.html", "*.hbs"],
+			options: {
+				requirePragma: false,
+				parser: "html",
+				htmlWhitespaceSensitivity: "ignore",
+			},
+		},
+	],
 }

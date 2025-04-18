@@ -5,7 +5,7 @@ class BaseActorData<Schema extends fields.DataSchema> extends foundry.abstract.T
   Actor.Implementation
 > {}
 
-;/I can help * -------------------------------------------- */
+/* -------------------------------------------- */
 
 /* -------------------------------------------- */
 
