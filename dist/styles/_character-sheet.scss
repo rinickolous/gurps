@@ -1,0 +1,104 @@
+form.gurps2.actor.sheet {
+  /* -------------------------------------------- */
+  /*  General Styles                              */
+  /* -------------------------------------------- */
+
+  .window-content {
+    section.element {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+
+      border-radius: 0.25rem;
+
+      background: var(--color-light-header-background);
+      border: 1px solid var(--color-light-header-border);
+      > header {
+        // border-radius: 0.25rem 0.25rem 0 0;
+        padding: var(--padding-header);
+        text-align: center;
+        font-weight: bold;
+        text-shadow: 1px 1px var(--color-shadow-dark);
+        background: var(--color-light-header-background);
+        border: 1px solid var(--color-light-header-border);
+        color: var(--color-light-header-text);
+      }
+    }
+  }
+
+  /* -------------------------------------------- */
+  /*  Sheet Header                                */
+  /* -------------------------------------------- */
+
+  header.window-header {
+    background: transparent;
+    border: none;
+
+    h1.window-title,
+    img.window-icon {
+      opacity: 0;
+    }
+  }
+
+  /* -------------------------------------------- */
+  /*  Sections                                    */
+  /* -------------------------------------------- */
+
+  section.portrait {
+    width: 8rem;
+
+    .img-wrapper {
+      width: 8rem;
+      position: relative;
+      display: inline-block;
+      overflow: hidden;
+
+      &:hover .img-overlay {
+        opacity: 1;
+      }
+
+      .img-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: radial-gradient(circle, rgba(0, 0, 0, 0.3) 40%, rgba(0, 0, 0, 0.8) 100%);
+        opacity: 0;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: opacity 0.3s ease;
+        pointer-events: none;
+      }
+    }
+
+    img {
+      width: calc(8rem - 2px);
+      aspect-ratio: 1 / 1;
+      display: block;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-size: cover;
+      border: none;
+    }
+  }
+
+  /* -------------------------------------------- */
+}
+
+// Dark mode
+.theme-dark {
+  form.gurps2.actor.sheet {
+    section.element {
+      background: var(--color-dark-header-background);
+      border-color: var(--color-dark-header-border);
+      > header {
+        background: var(--color-dark-header-background);
+        border-color: var(--color-dark-header-border);
+        color: var(--color-dark-header-text);
+      }
+    }
+  }
+}
