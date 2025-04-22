@@ -1635,7 +1635,7 @@ export class GurpsActorSheet extends ActorSheet {
   get title() {
     const t = this.actor.name
     const sheet = this.actor.getFlag('core', 'sheetClass')
-    return sheet === 'GURPS.GurpsActorEditorSheet' ? '**** Editing: ' + t + ' ****' : t
+    return sheet === 'gurps.GurpsActorEditorSheet' ? '**** Editing: ' + t + ' ****' : t
   }
 
   _getHeaderButtons() {
@@ -1653,7 +1653,7 @@ export class GurpsActorSheet extends ActorSheet {
    */
   getCustomHeaderButtons() {
     const sheet = this.actor.getFlag('core', 'sheetClass')
-    const isEditor = sheet === 'GURPS.GurpsActorEditorSheet'
+    const isEditor = sheet === 'gurps.GurpsActorEditorSheet'
     const altsheet = game.settings.get(settings.SYSTEM_NAME, settings.SETTING_ALT_SHEET)
 
     const isFull = sheet === undefined || sheet === 'GURPS.GurpsActorSheet'
@@ -1698,7 +1698,6 @@ export class GurpsActorSheet extends ActorSheet {
     const original =
       this.actor.getFlag('core', 'sheetClass') ||
       Object.values(CONFIG.Actor.sheetClasses['character']).filter(s => s.default)[0].id
-    console.log('original: ' + original)
 
     if (original != 'GURPS.GurpsActorSheet') newSheet = 'GURPS.GurpsActorSheet'
     if (event.shiftKey)
@@ -1713,7 +1712,7 @@ export class GurpsActorSheet extends ActorSheet {
 
   async _onOpenEditor(event) {
     event.preventDefault()
-    this.actor.openSheet('GURPS.GurpsActorEditorSheet')
+    this.actor.openSheet('gurps.GurpsActorEditorSheet')
   }
 
   async _onRightClickGurpslink(event) {
