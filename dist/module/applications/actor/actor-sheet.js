@@ -152,7 +152,8 @@ class GurpsActorSheetV2 extends foundry.applications.api.HandlebarsApplicationMi
      * Adds toggle switch to header
      */
     async _renderFrame(options) {
-        const frame = super._renderFrame(options);
+        const frame = await super._renderFrame(options);
+        console.log(frame);
         if (this.isEditable) {
             const toggleLabel = game.i18n?.localize('GURPS.Sheet.Common.ToggleMode');
             const toggleIcon = this._mode === this.constructor.MODES.EDIT ? 'fa-solid fa-unlock' : 'fa-solid fa-lock';

@@ -3,8 +3,44 @@ form.gurps2.actor.sheet {
   /*  General Styles                              */
   /* -------------------------------------------- */
 
+  header.window-header {
+    gap: 0.25rem;
+
+    background: var(--color-light-header-background);
+    border: 0.1rem solid var(--color-light-header-border);
+    color: var(--color-light-header-text);
+
+    h1.window-title {
+      color: inherit;
+    }
+
+    button {
+      aspect-ratio: 1/1;
+      border-radius: 0;
+      box-shadow: 2px 2px var(--color-light-button-shadow);
+      transition: none;
+
+      background: var(--color-light-button-background);
+      border: 0.1rem solid var(--color-light-button-border);
+      color: var(--color-light-button-text);
+
+      &[data-action='close'] {
+        background: red;
+      }
+
+      &:hover {
+        background: black;
+      }
+    }
+  }
+
   .window-content {
     padding: 0.25rem;
+
+    .flexcol,
+    .flexrow {
+      gap: 0.25rem;
+    }
 
     section.element {
       display: flex;
@@ -14,16 +50,16 @@ form.gurps2.actor.sheet {
       align-self: stretch;
 
       padding: 0.125rem;
-      border-radius: 0.25rem;
 
       background: var(--color-light-header-background);
-      border: 1px solid var(--color-light-header-border);
+      border: 0.1rem solid var(--color-light-header-border);
       > header {
-        // border-radius: 0.25rem 0.25rem 0 0;
-        padding: var(--padding-header);
+        width: 100%;
         text-align: center;
         font-weight: bold;
-        text-shadow: 1px 1px var(--color-shadow-dark);
+        padding: var(--padding-header);
+        border-bottom: 0.1rem dashed black;
+
         background: var(--color-light-header-background);
         color: var(--color-light-header-text);
       }
@@ -94,17 +130,13 @@ form.gurps2.actor.sheet {
 // Dark mode
 .theme-dark {
   form.gurps2.actor.sheet {
-    section.element {
+    header.window-header {
       background: var(--color-dark-header-background);
-      border-color: var(--color-dark-header-border);
-      > header {
-        background: var(--color-dark-header-background);
-        color: var(--color-dark-header-text);
-      }
-    }
-    section.attributes {
-      ul {
-        // background: var(--color-dark-content-background);
+      border: 0.1rem solid var(--color-dark-header-border);
+      color: var(--color-dark-header-text);
+
+      button {
+        box-shadow: 2px 2px var(--color-dark-button-shadow);
       }
     }
   }

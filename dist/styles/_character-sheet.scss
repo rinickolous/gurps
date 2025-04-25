@@ -79,7 +79,7 @@ form.gurps2.actor.sheet {
     ul {
       border: 0.125rem solid transparent;
       border-radius: 0.25rem;
-      background: var(--color-light-content-background);
+      // background: var(--color-light-content-background);
       margin: 0;
       padding: 0;
       list-style: none;
@@ -104,7 +104,7 @@ form.gurps2.actor.sheet {
     }
     section.attributes {
       ul {
-        background: var(--color-dark-content-background);
+        // background: var(--color-dark-content-background);
       }
     }
   }

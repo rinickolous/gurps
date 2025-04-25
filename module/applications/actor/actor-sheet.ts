@@ -192,7 +192,8 @@ class GurpsActorSheetV2 extends foundry.applications.api.HandlebarsApplicationMi
   protected override async _renderFrame(
     options: DeepPartial<foundry.applications.api.ApplicationV2.RenderOptions>
   ): Promise<HTMLElement> {
-    const frame = super._renderFrame(options)
+    const frame = await super._renderFrame(options)
+    console.log(frame)
 
     if (this.isEditable) {
       const toggleLabel = game.i18n?.localize('GURPS.Sheet.Common.ToggleMode')

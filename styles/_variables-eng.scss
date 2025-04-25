@@ -1,0 +1,36 @@
+body {
+  // Headers
+  --color-light-header-background: white;
+  --color-light-header-border: black;
+  --color-light-header-text: black;
+  --color-dark-header-background: #404040;
+  --color-dark-header-border: #404040;
+  --color-dark-header-text: #e2e2e2;
+  --padding-header: 0.125rem;
+
+  // Buttons
+  --color-light-button-background: #007bff;
+  --color-light-button-border: black;
+  --color-light-button-text: white;
+  --color-light-button-shadow: #bbb;
+  --color-dark-button-background: #404040;
+  --color-dark-button-border: #404040;
+  --color-dark-button-text: white;
+  --color-dark-button-shadow: #333;
+
+  // Content
+  --color-light-content-background: var(--color-light-1);
+  // --color-light-content-border: var(--color-border-dark-4);
+  // --color-light-content-text: var(--color-text-light-highlight);
+  --color-dark-content-background: var(--color-cool-3);
+  // --color-dark-content-border: var(--color-cool-4);
+  // --color-dark-content-text: var(--color-text-light-highlight);
+
+  // Buttons
+  // --color-light-button-background:
+  // --color-light-button-border:
+  // --color-light-button-text:
+  // --color-dark-button-background:
+  // --color-dark-button-border:
+  // --color-dark-button-text:
+}

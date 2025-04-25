@@ -8,5 +8,7 @@
 @use './styles/simplified.css';
 @use './styles/tinycolorpicker.css';
 
-@use 'styles/variables';
-@use 'styles/character-sheet';
+// @use 'styles/variables';
+@use 'styles/variables-eng';
+// @use 'styles/character-sheet';
+@use 'styles/character-sheet-eng';
