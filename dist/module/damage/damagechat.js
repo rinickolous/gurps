@@ -405,8 +405,20 @@ export default class DamageChat {
             ui.notifications?.warn(game.i18n.localize('GURPS.invalidUserForDamageWarning'));
             return false;
         }
-        // Create a "reactangle" to represent the drop coordinates. It is really a point as width and height are 0.
-        let selectedTokens = await DamageChat.selectTokensAtPosition(dropData.x, dropData.y);
+        // // Create a "reactangle" to represent the drop coordinates. It is really a point as width and height are 0.
+        // const rect = new PIXI.Rectangle(dropData.x, dropData.y, 0, 0)
+        // // Get all tokens under the point.
+        // let selectedTokens = canvas.tokens.quadtree
+        //   .getObjects(rect, {
+        //     collisionTest: o => o.t.hitArea.contains(dropData.x - o.t.x, dropData.y - o.t.y),
+        //   })
+        //   .values()
+        //   .toArray()
+        // Get all tokens under the drop point. Use this instead of the quadtree approach because
+        // GURPS Token Shapes and Movement manipulates the position of the tokens.
+        let selectedTokens = canvas.tokens.objects.children.filter(t => t.hitArea.contains(dropData.x - t.x, dropData.y - t.y));
+        if (selectedTokens.length > 1)
+            selectedTokens = await selectTarget(selectedTokens);
         if (selectedTokens.length === 0) {
             selectedTokens = user?.targets.values().toArray();
             if (!selectedTokens || selectedTokens.length === 0) {
@@ -436,18 +448,12 @@ export default class DamageChat {
         }
     }
     static async selectTokensAtPosition(x, y, single = false) {
-        // // Create a "reactangle" to represent the drop coordinates. It is really a point as width and height are 0.
-        // const rect = new PIXI.Rectangle(dropData.x, dropData.y, 0, 0)
-        // // Get all tokens under the point.
-        // let selectedTokens = canvas.tokens.quadtree
-        //   .getObjects(rect, {
-        //     collisionTest: o => o.t.hitArea.contains(dropData.x - o.t.x, dropData.y - o.t.y),
-        //   })
-        //   .values()
-        //   .toArray()
-        // Get all tokens under the drop point. Use this instead of the quadtree approach because
-        // GURPS Token Shapes and Movement manipulates the position of the tokens.
-        let selectedTokens = canvas.tokens.objects.children.filter(t => t.hitArea.contains(dropData.x - t.x, dropData.y - t.y));
+        const rect = new PIXI.Rectangle(x, y, 0, 0);
+        // Get all tokens under the point.
+        let selectedTokens = canvas.tokens.quadtree
+            .getObjects(rect, { collisionTest: o => o.t.hitArea.contains(x - o.t.x, y - o.t.y) })
+            .values()
+            .toArray();
         if (selectedTokens.length > 1)
             selectedTokens = await selectTarget(selectedTokens, { single: true });
         return selectedTokens;

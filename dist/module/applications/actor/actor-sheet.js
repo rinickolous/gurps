@@ -141,6 +141,11 @@ class GurpsActorSheetV2 extends foundry.applications.api.HandlebarsApplicationMi
             actor: this.actor,
             system: this.actor.system,
             portraitHoverText: game.i18n?.localize(`GURPS.Sheet.Common.PortraitHoverText.${this.isEditing ? 'Edit' : 'View'}`),
+            attributesPrimary: [{}, {}, {}, {}, {}, {}],
+            basicThrust: {},
+            basicSwing: {},
+            attributesSecondary: [{}, {}, {}, {}, {}, {}, {}],
+            attributesPool: [{}],
         };
     }
     /**

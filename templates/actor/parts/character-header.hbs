@@ -1,3 +1,14 @@
 <section class='character-header'>
-	{{> 'gurps.actor.parts.portrait'}}
+	<div class="flexrow">
+		{{> 'gurps.actor.parts.portrait'}}
+		<div class="flexcol">
+			<div class="flexrow">
+				{{> 'gurps.actor.parts.attributes-primary'}}
+				{{> 'gurps.actor.parts.attributes-secondary'}}
+				{{> 'gurps.actor.parts.encumbrance-move'}}
+			</div>
+				{{> 'gurps.actor.parts.combat-info'}}
+		</div>
+		{{> 'gurps.actor.parts.attributes-pool'}}
+	</div>
 </section>

@@ -4,11 +4,16 @@ form.gurps2.actor.sheet {
   /* -------------------------------------------- */
 
   .window-content {
+    padding: 0.25rem;
+
     section.element {
       display: flex;
       flex-direction: column;
+      flex-grow: 0;
       align-items: center;
+      align-self: stretch;
 
+      padding: 0.125rem;
       border-radius: 0.25rem;
 
       background: var(--color-light-header-background);
@@ -20,23 +25,8 @@ form.gurps2.actor.sheet {
         font-weight: bold;
         text-shadow: 1px 1px var(--color-shadow-dark);
         background: var(--color-light-header-background);
-        border: 1px solid var(--color-light-header-border);
         color: var(--color-light-header-text);
       }
-    }
-  }
-
-  /* -------------------------------------------- */
-  /*  Sheet Header                                */
-  /* -------------------------------------------- */
-
-  header.window-header {
-    background: transparent;
-    border: none;
-
-    h1.window-title,
-    img.window-icon {
-      opacity: 0;
     }
   }
 
@@ -75,13 +65,26 @@ form.gurps2.actor.sheet {
     }
 
     img {
-      width: calc(8rem - 2px);
+      height: 8rem;
       aspect-ratio: 1 / 1;
       display: block;
-      background-position: center;
-      background-repeat: no-repeat;
-      background-size: cover;
-      border: none;
+      border: 0.125rem solid transparent;
+      border-radius: 0.25rem;
+      // padding: 0.125rem;
+    }
+  }
+
+  section.attributes {
+    white-space: nowrap;
+    ul {
+      border: 0.125rem solid transparent;
+      border-radius: 0.25rem;
+      background: var(--color-light-content-background);
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      width: 100%;
+      height: 100%;
     }
   }
 
@@ -96,8 +99,12 @@ form.gurps2.actor.sheet {
       border-color: var(--color-dark-header-border);
       > header {
         background: var(--color-dark-header-background);
-        border-color: var(--color-dark-header-border);
         color: var(--color-dark-header-text);
+      }
+    }
+    section.attributes {
+      ul {
+        background: var(--color-dark-content-background);
       }
     }
   }

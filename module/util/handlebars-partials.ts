@@ -1,5 +1,13 @@
 export async function preloadHandlebarsTemplates() {
-  const partials = ['systems/gurps/templates/actor/parts/portrait.hbs']
+  const partials = [
+    'systems/gurps/templates/actor/parts/portrait.hbs',
+    'systems/gurps/templates/actor/parts/attributes-primary.hbs',
+    'systems/gurps/templates/actor/parts/attributes-secondary.hbs',
+    'systems/gurps/templates/actor/parts/attributes-pool.hbs',
+    'systems/gurps/templates/actor/parts/attribute-entry.hbs',
+    'systems/gurps/templates/actor/parts/encumbrance-move.hbs',
+    'systems/gurps/templates/actor/parts/combat-info.hbs',
+  ]
 
   const paths: Record<string, string> = {}
 

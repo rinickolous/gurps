@@ -7250,6 +7250,8 @@ body {
   --color-dark-header-border: var(--color-cool-4);
   --color-dark-header-text: var(--color-text-light-highlight);
   --padding-header: 0.125rem;
+  --color-light-content-background: var(--color-light-1);
+  --color-dark-content-background: var(--color-cool-3);
 }
 
 .testbutton {
@@ -7271,7 +7273,10 @@ form.gurps2.actor.sheet .window-content {
 form.gurps2.actor.sheet .window-content section.element {
   display: flex;
   flex-direction: column;
+  flex-grow: 0;
   align-items: center;
+  align-self: stretch;
+  padding: 0.125rem;
   border-radius: 0.25rem;
   background: var(--color-light-header-background);
   border: 1px solid var(--color-light-header-border);
@@ -7318,6 +7323,19 @@ form.gurps2.actor.sheet section.portrait img {
   border: 0.125rem solid transparent;
   border-radius: 0.25rem;
 }
+form.gurps2.actor.sheet section.attributes {
+  white-space: nowrap;
+}
+form.gurps2.actor.sheet section.attributes ul {
+  border: 0.125rem solid transparent;
+  border-radius: 0.25rem;
+  background: var(--color-light-content-background);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  width: 100%;
+  height: 100%;
+}
 
 .theme-dark form.gurps2.actor.sheet section.element {
   background: var(--color-dark-header-background);
@@ -7326,6 +7344,9 @@ form.gurps2.actor.sheet section.portrait img {
 .theme-dark form.gurps2.actor.sheet section.element > header {
   background: var(--color-dark-header-background);
   color: var(--color-dark-header-text);
+}
+.theme-dark form.gurps2.actor.sheet section.attributes ul {
+  background: var(--color-dark-content-background);
 }
 
 /*# sourceMappingURL=gurps.css.map */
